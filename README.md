@@ -15,6 +15,8 @@
 
 
 ## [Settings](https://github.com/vanhbakaa/Seed-App-Mine-Seed-BOT-Telegram/blob/main/.env-example)
+
+# Use default setting for best performance !
 | Settings                |                                 Description                                 |
 |-------------------------|:---------------------------------------------------------------------------:|
 | **API_ID / API_HASH**   | Platform data from which to run the Telegram session (by default - android) |
