@@ -80,6 +80,4 @@ You can also use arguments for quick start, for example:
 
 ### Contacts
 
-For support or questions, you can contact me
-https://t.me/Vanhday1
-[![Static Badge](https://img.shields.io/badge/Telegram-Channel-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/Vanhday1)
+For support or questions, you can contact me [![Static Badge](https://img.shields.io/badge/Telegram-Channel-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/Vanhday1)
