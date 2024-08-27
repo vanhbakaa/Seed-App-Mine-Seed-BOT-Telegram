@@ -52,9 +52,9 @@ python3 main.py
 
 You can also use arguments for quick start, for example:
 ```shell
-~/OkxRacerBot >>> python3 main.py --action (1/2)
+~/Seed-App-Mine-Seed-BOT-Telegram >>> python3 main.py --action (1/2)
 # Or
-~/OkxRacerBot >>> python3 main.py -a (1/2)
+~/Seed-App-Mine-Seed-BOT-Telegram >>> python3 main.py -a (1/2)
 
 # 1 - Run clicker
 # 2 - Creates a session
@@ -72,9 +72,9 @@ python main.py
 
 You can also use arguments for quick start, for example:
 ```shell
-~/OkxRacerBot >>> python main.py --action (1/2)
+~/Seed-App-Mine-Seed-BOT-Telegram >>> python main.py --action (1/2)
 # Or
-~/OkxRacerBot >>> python main.py -a (1/2)
+~/Seed-App-Mine-Seed-BOT-Telegram >>> python main.py -a (1/2)
 
 # 1 - Run clicker
 # 2 - Creates a session
@@ -82,4 +82,4 @@ You can also use arguments for quick start, for example:
 
 ### Contacts
 
-For support or questions, you can contact me [![Static Badge](https://img.shields.io/badge/Telegram-Channel-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/Vanhday1)
+For support or questions, you can contact me [![Static Badge](https://img.shields.io/badge/Telegram-Channel-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/airdrop_tool_vanh)
