@@ -31,6 +31,13 @@ api_upgrade_storage = 'https://elb.seeddao.org/api/v1/seed/storage-size/upgrade'
 api_upgrade_mining = 'https://elb.seeddao.org/api/v1/seed/mining-speed/upgrade'
 api_upgrade_holy = 'https://elb.seeddao.org/api/v1/upgrades/holy-water'
 api_profile = 'https://elb.seeddao.org/api/v1/profile'
+api_hunt_completed = 'https://elb.seeddao.org/api/v1/bird-hunt/complete'
+api_bird_info = "https://elb.seeddao.org/api/v1/bird/is-leader"
+api_make_happy = 'https://elb.seeddao.org/api/v1/bird-happiness'
+api_get_worm_data = "https://elb.seeddao.org/api/v1/worms/me-all"
+api_feed = "https://elb.seeddao.org/api/v1/bird-feed"
+api_start_hunt = "https://elb.seeddao.org/api/v1/bird-hunt/start"
+
 
 
 class Tapper:
@@ -230,6 +237,66 @@ class Tapper:
         else:
             logger.error(f"Failed to complete task {task_name}, status code: {response.status}")
 
+    async def claim_hunt_reward(self, bird_id,  http_client: aiohttp.ClientSession):
+        payload = {
+            "bird_id": bird_id
+        }
+        response = await http_client.post(api_hunt_completed, json=payload)
+        if response.status == 200:
+            response_data = await response.json()
+            logger.success(f"<green>Successfully claimed {response_data['data']['seed_amount']/(10**9)} seed from hunt reward.</green>")
+        else:
+            logger.error(f"Failed to claim hunt reward, status code: {response.status}")
+
+    async def get_bird_info(self,  http_client: aiohttp.ClientSession):
+        response = await http_client.get(api_bird_info)
+        if response.status == 200:
+            response_data = await response.json()
+            return response_data['data']
+        else:
+            return None
+
+    async def make_bird_happy(self, bird_id, http_client: aiohttp.ClientSession):
+        payload = {
+            "bird_id": bird_id,
+            "happiness_rate": 10000
+        }
+        response = await http_client.post(api_make_happy, json=payload)
+        if response.status == 200:
+            return True
+        else:
+            return False
+
+    async def get_worm_data(self, http_client: aiohttp.ClientSession):
+        response = await http_client.get(api_get_worm_data)
+        if response.status == 200:
+            response_data = await response.json()
+            return response_data['data']
+        else:
+            return None
+
+    async def feed_bird(self,bird_id, worm_id, http_client: aiohttp.ClientSession):
+        payload = {
+            "bird_id": bird_id,
+            "worm_ids": worm_id
+        }
+        response = await http_client.post(api_feed, json = payload)
+        if response.status == 200:
+            response_data = await response.json()
+            return response_data['energy_max'] - response_data['energy_level']
+        else:
+            return None
+
+    async def start_hunt(self, bird_id, http_client: aiohttp.ClientSession):
+        payload = {
+            "bird_id": bird_id,
+            "task_level": 0
+        }
+        response = await http_client.post(api_start_hunt, json=payload)
+        if response.status == 200:
+            logger.success("Successfully start hunting")
+        else:
+            logger.error(f"Start hunting failed..., response code: {response.status}")
 
     async def run(self, proxy: str | None) -> None:
         access_token_created_time = 0
@@ -254,6 +321,51 @@ class Tapper:
                     await asyncio.sleep(delay=randint(10, 15))
                 logger.info(f"Session {self.first_name} {self.last_name} logged in.")
                 await self.fetch_profile(http_client)
+
+                if settings.AUTO_START_HUNT:
+                    bird_data = await self.get_bird_info(http_client)
+                    if bird_data is None:
+                        logger.info("Can't get bird data...")
+                    elif bird_data['status'] == "hunting":
+                        logger.info("Bird currently hunting...")
+                    else:
+                        condition = True
+                        if bird_data['happiness_level'] == 0:
+                            logger.info("Bird is not happy, attemping to make bird happy...")
+                            check = await self.make_bird_happy(bird_data['id'], http_client)
+                            if check:
+                                logger.success(f"Successfully make bird happy!")
+                            else:
+                                logger.info("Failed to make bird happy!")
+                                condition = False
+                        if bird_data['energy_level'] == 0:
+                            logger.info("Bird is hungry, attemping to feed bird...")
+                            worms = await self.get_worm_data(http_client)
+                            if worms is None:
+                                condition = False
+                            elif len(worms) == 0:
+                                condition = False
+                            else:
+                                energy = bird_data['energy_max']
+                                for worm in worms:
+                                    if worm['type'] == "common":
+                                        wormss = [worm['id']]
+                                        energy = await self.feed_bird(bird_data['id'], wormss, http_client)
+                                        if energy <= 1000000000:
+                                            break
+                                if energy > 1000000000:
+                                    for worm in worms:
+                                        if worm['type'] == "uncommon":
+                                            wormss = [worm['id']]
+                                            energy = await self.feed_bird(bird_data['id'], wormss, http_client)
+                                            if energy <= 1000000000:
+                                                break
+                                if energy > 1000000000:
+                                    condition = False
+
+                        if condition:
+                            await self.start_hunt(bird_data['id'], http_client)
+
                 if settings.AUTO_UPGRADE_STORAGE:
                     await self.upgrade_storage(http_client)
                     await asyncio.sleep(1)
