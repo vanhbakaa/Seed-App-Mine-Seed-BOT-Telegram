@@ -1,6 +1,6 @@
 ## Recommendation before use
 
-# 🔥🔥 Use PYTHON 3.10 🔥🔥
+# 🔥🔥 Use PYTHON 3.10 - 3.11.5 🔥🔥
 
 ## Features  
 | Feature                                                   | Supported |
@@ -12,6 +12,7 @@
 | Auto-tasks                                                |     ✅     |
 | Auto-upgrade                                              |     ✅     |
 | Auto-check-in                                             |     ✅     |
+| Auto-hunt                                                 |     ✅     |
 
 
 ## [Settings](https://github.com/vanhbakaa/Seed-App-Mine-Seed-BOT-Telegram/blob/main/.env-example)
@@ -24,6 +25,7 @@
 | **AUTO_UPGRADE_MINING** |                  Auto upgrade mining speed (by default - True)              |
 | **AUTO_UPGRADE_HOLY**   |                    Auto upgrade holy (by default - True)                    |
 | **AUTO_TASK**           |                       Auto tasks (default - True)                           |
+| **AUTO_START_HUNT**     |                    Auto start hunt (default - True)                         |
 | **USE_PROXY_FROM_FILE** | Whether to use a proxy from the bot/config/proxies.txt file (True / False)  |
 
 ## Quick Start 📚
