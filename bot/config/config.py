@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     AUTO_UPGRADE_MINING: bool = True
     AUTO_UPGRADE_HOLY: bool = True
     AUTO_CLEAR_TASKS: bool = True
+    AUTO_START_HUNT: bool = True
 
     USE_PROXY_FROM_FILE: bool = False
 
