@@ -327,7 +327,13 @@ class Tapper:
                     if bird_data is None:
                         logger.info("Can't get bird data...")
                     elif bird_data['status'] == "hunting":
-                        logger.info("Bird currently hunting...")
+                        given_time = datetime.fromisoformat(bird_data['hunt_end_at'].replace("Z", "+00:00"))
+                        now = datetime.utcnow()
+                        if now < given_time:
+                            logger.info("Bird currently hunting...")
+                        else:
+                            logger.info("Hunt completed, claiming reward...")
+                            await self.claim_hunt_reward(bird_data['id'], http_client)
                     else:
                         condition = True
                         if bird_data['happiness_level'] == 0:
