@@ -350,7 +350,10 @@ class Tapper:
                                 logger.warning(f"{self.session_name} | You dont have any worm to feed bird!")
                                 condition = False
                             else:
-                                energy = bird_data['energy_max']
+                                try:
+                                    energy = bird_data['energy_max']
+                                except:
+                                    energy = 1000000000
                                 for worm in worms:
                                     if worm['type'] == "common":
                                         wormss = [worm['id']]
