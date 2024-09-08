@@ -1,6 +1,6 @@
 ## Recommendation before use
 
-# 🔥🔥 Use PYTHON 3.10 - 3.11.5 🔥🔥
+# 🔥🔥 Use PYTHON 3.11.5 🔥🔥
 
 ## Features  
 | Feature                                                   | Supported |
