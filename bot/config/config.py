@@ -12,13 +12,14 @@ class Settings(BaseSettings):
     AUTO_UPGRADE_HOLY: bool = True
     AUTO_CLEAR_TASKS: bool = True
     AUTO_START_HUNT: bool = True
-    
+
     AUTO_SELL_WORMS: bool = True
-    WORM_LVL_TO_SELL: int = 1
+    WORM_LVL_TO_SELL: int = 2
     PRICE_TO_SELL: int = 0
+    QUANTITY_FOR_SALE: int = 3
 
     USE_PROXY_FROM_FILE: bool = False
 
-
 settings = Settings()
+
 
