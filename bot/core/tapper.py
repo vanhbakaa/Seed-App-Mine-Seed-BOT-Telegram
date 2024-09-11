@@ -38,6 +38,8 @@ api_make_happy = 'https://elb.seeddao.org/api/v1/bird-happiness'
 api_get_worm_data = "https://elb.seeddao.org/api/v1/worms/me-all"
 api_feed = "https://elb.seeddao.org/api/v1/bird-feed"
 api_start_hunt = "https://elb.seeddao.org/api/v1/bird-hunt/start"
+api_inv = "https://elb.seeddao.org/api/v1/worms/me"
+api_sell = "https://elb.seeddao.org/api/v1/market-item/add"
 
 
 
@@ -50,6 +52,11 @@ class Tapper:
         self.user_id = ''
         self.Total_Point_Earned = 0
         self.Total_Game_Played = 0
+        self.worm_lvl = {"common": 1,
+                         "uncommon": 2,
+                         "rare": 3,
+                         "epic": 4,
+                         "legendary": 5}
 
     async def get_tg_web_data(self, proxy: str | None) -> str:
         logger.info(f"Getting data for {self.session_name}")
@@ -273,7 +280,10 @@ class Tapper:
         if response.status_code == 200:
             response_data = response.json()
             logger.success(f"{self.session_name} | <green>Feed bird successfully</green>")
-            return response_data['energy_max'] - response_data['energy_level']
+            try:
+                return response_data['energy_max'] - response_data['energy_level']
+            except:
+                return response_data['energy_level']
         else:
             response_data = response.json()
             print(response_data)
@@ -291,6 +301,47 @@ class Tapper:
         else:
             print(response.json())
             logger.error(f"{self.session_name} | Start hunting failed..., response code: {response.status_code}")
+
+    def get_worms(self):
+        worms = []
+        first_page = requests.get(api_inv+"?page=1", headers=headers)
+        json_page = first_page.json()
+        for worm in json_page['data']['items']:
+            worms.append(worm)
+        count = 0
+        if json_page['data']['total'] % json_page['data']['page_size'] != 0:
+            count = 1
+        total_page = int(float(json_page['data']['total'] / json_page['data']['page_size'])) + count
+        for page in range(2, total_page+1):
+            api_url = api_inv + f"?page={page}"
+            page_data = requests.get(api_url, headers=headers)
+            json_page = page_data.json()
+            for worm in json_page['data']['items']:
+                worms.append(worm)
+        return worms
+
+    def sell_worm(self, worm_id, price):
+        payload = {
+            "price": price,
+            "worm_id": worm_id
+        }
+        response = requests.post(api_sell, json=payload, headers=headers)
+        if response.status_code == 200:
+            logger.success(f"{self.session_name} | <green>Sell worm successfully, price: {price/1000000000}</green>")
+        else:
+            response_data = response.json()
+            print(response_data)
+            logger.info(f"{self.session_name} | Failed to sell worm, response code:{response.status_code}")
+            return None
+
+    def get_price(self, worm_type):
+        api = f"https://elb.seeddao.org/api/v1/market/v2?market_type=worm&worm_type={worm_type}&sort_by_price=ASC&sort_by_updated_at=&page=1"
+        response = requests.get(api, headers=headers)
+        if response.status_code == 200:
+            json_r = response.json()
+            return json_r['data']['items'][0]['price_gross']
+        else:
+            return 0
 
     async def run(self, proxy: str | None) -> None:
         access_token_created_time = 0
@@ -322,8 +373,13 @@ class Tapper:
                     if bird_data is None:
                         logger.info(f"{self.session_name} | Can't get bird data...")
                     elif bird_data['status'] == "hunting":
-                        given_time = datetime.fromisoformat(bird_data['hunt_end_at'])
-                        timestamp_naive = given_time.replace(tzinfo=None)
+
+                        try:
+                            given_time = datetime.fromisoformat(bird_data['hunt_end_at'])
+                            timestamp_naive = given_time.replace(tzinfo=None)
+                        except:
+                            import dateutil.parser
+                            timestamp_naive = dateutil.parser.isoparse(bird_data['hunt_end_at'])
                         now = datetime.utcnow()
                         if now < timestamp_naive:
                             logger.info(f"{self.session_name} | Bird currently hunting...")
@@ -357,14 +413,14 @@ class Tapper:
                                 for worm in worms:
                                     if worm['type'] == "common":
                                         wormss = [worm['id']]
-                                        energy = self.feed_bird(bird_data['id'], wormss)
+                                        energy -= self.feed_bird(bird_data['id'], wormss)
                                         if energy <= 1000000000:
                                             break
                                 if energy > 1000000000:
                                     for worm in worms:
                                         if worm['type'] == "uncommon":
                                             wormss = [worm['id']]
-                                            energy = self.feed_bird(bird_data['id'], wormss)
+                                            energy -= self.feed_bird(bird_data['id'], wormss)
                                             if energy <= 1000000000:
                                                 break
                                 if energy > 1000000000:
@@ -395,8 +451,23 @@ class Tapper:
 
                     await self.perform_daily_checkin(http_client)
                     await self.capture_worm(http_client)
-                    if settings.AUTO_CLEAR_TASKS:
-                        await self.fetch_tasks(http_client)
+                if settings.AUTO_SELL_WORMS:
+                    worms = self.get_worms()
+                    worm_lvl_min = settings.WORM_LVL_TO_SELL
+                    price_to_sell = settings.PRICE_TO_SELL*1000000000
+                    for worm in worms:
+                        if self.worm_lvl[worm['type']] != worm_lvl_min:
+                            continue
+                        elif worm['on_market']:
+                            continue
+                        else:
+                            if price_to_sell == 0:
+                                price_to_sell = self.get_price(worm['type'])
+                                if price_to_sell == 0:
+                                    continue
+                            self.sell_worm(worm['id'], price_to_sell)
+                if settings.AUTO_CLEAR_TASKS:
+                    await self.fetch_tasks(http_client)
 
                 delay_time = randint(3400, 3600)
                 logger.info(f"{self.session_name} | Completed {self.session_name}, waiting {delay_time} seconds...")
@@ -405,7 +476,7 @@ class Tapper:
                 raise error
 
             except Exception as error:
-                # traceback.print_exc()
+                traceback.print_exc()
                 logger.error(f"{self.session_name} | Unknown error: {error}")
                 await asyncio.sleep(delay=randint(60, 120))
 
