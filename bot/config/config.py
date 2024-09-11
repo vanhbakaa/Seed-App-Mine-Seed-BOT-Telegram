@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     AUTO_CLEAR_TASKS: bool = True
     AUTO_START_HUNT: bool = True
 
+    WORM_LVL_TO_SELL: int = 2
+    PRICE_TO_SELL: int = 0
+
     USE_PROXY_FROM_FILE: bool = False
 
 
