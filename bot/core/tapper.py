@@ -1,6 +1,5 @@
 import asyncio
 from datetime import datetime
-from time import time
 from urllib.parse import unquote, quote
 
 import aiohttp
@@ -22,6 +21,7 @@ from .headers import headers
 
 from random import randint, uniform
 import traceback
+import time
 
 
 #api endpoint
@@ -57,6 +57,8 @@ class Tapper:
                          "rare": 3,
                          "epic": 4,
                          "legendary": 5}
+        self.total_earned_from_sale = 0
+        self.total_on_sale = 0
 
     async def get_tg_web_data(self, proxy: str | None) -> str:
         logger.info(f"Getting data for {self.session_name}")
@@ -318,6 +320,7 @@ class Tapper:
             json_page = page_data.json()
             for worm in json_page['data']['items']:
                 worms.append(worm)
+            time.sleep(uniform(1,2))
         return worms
 
     def sell_worm(self, worm_id, price):
@@ -327,6 +330,7 @@ class Tapper:
         }
         response = requests.post(api_sell, json=payload, headers=headers)
         if response.status_code == 200:
+            self.total_on_sale += 1
             logger.success(f"{self.session_name} | <green>Sell worm successfully, price: {price/1000000000}</green>")
         else:
             response_data = response.json()
@@ -343,6 +347,31 @@ class Tapper:
         else:
             return 0
 
+    def get_list_data(self, worm_type):
+        api = "https://elb.seeddao.org/api/v1/history-log-market/me?market_type=worm&page=1&history_type=sell"
+        response = requests.get(api, headers=headers)
+        json_data = response.json()
+        worm_on_sale = []
+        for worm in json_data['data']['items']:
+            if worm['worm_type'] == worm_type and worm['status'] == "on-sale":
+                worm_on_sale.append(worm)
+            elif worm['status'] == "bought":
+                self.total_earned_from_sale += worm['price_net']/1000000000
+        count = 0
+        if json_data['data']['total'] % json_data['data']['page_size'] != 0:
+            count = 1
+        total_page = int(float(json_data['data']['total'] / json_data['data']['page_size'])) + count
+        for page in range(2, total_page + 1):
+            response = requests.get(f"https://elb.seeddao.org/api/v1/history-log-market/me?market_type=worm&page={page}&history_type=sell", headers=headers)
+            json_data = response.json()
+            for worm in json_data['data']['items']:
+                if worm['worm_type'] == worm_type and worm['status'] == "on-sale":
+                    worm_on_sale.append(worm)
+                elif worm['status'] == "bought":
+                    self.total_earned_from_sale += worm['price_net'] / 1000000000
+
+        return worm_on_sale
+
     async def run(self, proxy: str | None) -> None:
         access_token_created_time = 0
         proxy_conn = ProxyConnector().from_url(proxy) if proxy else None
@@ -356,13 +385,13 @@ class Tapper:
         token_live_time = randint(3500, 3600)
         while True:
             try:
-                if time() - access_token_created_time >= token_live_time:
+                if time.time() - access_token_created_time >= token_live_time:
                     logger.info(f"{self.session_name} | Update auth token...")
                     tg_web_data = await self.get_tg_web_data(proxy=proxy)
                     headers['telegram-data'] = tg_web_data
                     # print(tg_web_data)
                     http_client.headers["telegram-data"] = tg_web_data
-                    access_token_created_time = time()
+                    access_token_created_time = time.time()
                     token_live_time = randint(3500, 3600)
                     await asyncio.sleep(delay=randint(10, 15))
 
@@ -452,8 +481,22 @@ class Tapper:
                     await self.perform_daily_checkin(http_client)
                     await self.capture_worm(http_client)
                 if settings.AUTO_SELL_WORMS:
+                    logger.info(f"{self.session_name} | Fetching worms data to put it on sale...")
                     worms = self.get_worms()
                     worm_lvl_min = settings.WORM_LVL_TO_SELL
+                    if worm_lvl_min == 1:
+                        worm_type = "common"
+                    elif worm_lvl_min == 2:
+                        worm_type = "uncommon"
+                    elif worm_lvl_min == 3:
+                        worm_type = "rare"
+                    elif worm_lvl_min == 4:
+                        worm_type = "epic"
+                    else:
+                        worm_type = "legendary"
+                    worm_on_sale = self.get_list_data(worm_type)
+                    self.total_on_sale = len(worm_on_sale)
+                    logger.info(f"{self.session_name} | Total {worm_type} on sale: <green>{len(worm_on_sale)}</green> | Total seed earned from selling: <green>{self.total_earned_from_sale} seed</green>")
                     price_to_sell = settings.PRICE_TO_SELL*1000000000
                     for worm in worms:
                         if self.worm_lvl[worm['type']] != worm_lvl_min:
@@ -461,11 +504,15 @@ class Tapper:
                         elif worm['on_market']:
                             continue
                         else:
-                            if price_to_sell == 0:
-                                price_to_sell = self.get_price(worm['type'])
+                            if self.total_on_sale < settings.QUANTITY_FOR_SALE:
                                 if price_to_sell == 0:
-                                    continue
-                            self.sell_worm(worm['id'], price_to_sell)
+                                    price_to_sell = self.get_price(worm['type'])
+                                    if price_to_sell == 0:
+                                        continue
+                                self.sell_worm(worm['id'], price_to_sell)
+                            else:
+                                logger.info(f"{self.session_name} | <yellow>Max quantity for sale reached skipping...</yellow>")
+                                break
                 if settings.AUTO_CLEAR_TASKS:
                     await self.fetch_tasks(http_client)
 
