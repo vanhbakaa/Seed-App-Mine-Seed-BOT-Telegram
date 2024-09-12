@@ -1,8 +1,6 @@
 headers = {
-    'accept': 'application/json, text/plain, */*',
-    'accept-language': 'en-ID,en-US;q=0.9,en;q=0.8,id;q=0.7',
-    'content-length': '0',
-    'dnt': '1',
+    'accept': '*/*',
+    'accept-language': 'en-US;q=0.9,en;q=0.8,id;q=0.7',
     'origin': 'https://cf.seeddao.org',
     'priority': 'u=1, i',
     'referer': 'https://cf.seeddao.org/',
