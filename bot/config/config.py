@@ -7,16 +7,35 @@ class Settings(BaseSettings):
     API_ID: int
     API_HASH: str
 
-    AUTO_UPGRADE_STORAGE: bool = True
-    AUTO_UPGRADE_MINING: bool = True
-    AUTO_UPGRADE_HOLY: bool = True
-    AUTO_CLEAR_TASKS: bool = True
-    AUTO_START_HUNT: bool = True
+    AUTO_UPGRADE_STORAGE: bool = False
+    AUTO_UPGRADE_MINING: bool = False
+    AUTO_UPGRADE_HOLY: bool = False
+    AUTO_CLEAR_TASKS: bool = False
+    AUTO_START_HUNT: bool = False
 
     AUTO_SELL_WORMS: bool = True
-    WORM_LVL_TO_SELL: int = 2
-    PRICE_TO_SELL: int = 0
-    QUANTITY_FOR_SALE: int = 3
+    QUANTITY_TO_KEEP: dict = {
+        "common": {
+            "quantity_to_keep": 2,
+            "sale_price": 1
+        },
+        "uncommon": {
+            "quantity_to_keep": 2,
+            "sale_price": 0
+        },
+        "rare": {
+            "quantity_to_keep": -1,
+            "sale_price": 0
+        },
+        "epic": {
+            "quantity_to_keep": -1,
+            "sale_price": 0
+        },
+        "legendary": {
+            "quantity_to_keep": -1,
+            "sale_price": 0
+        }
+    }
 
     USE_PROXY_FROM_FILE: bool = False
 
