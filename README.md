@@ -27,10 +27,8 @@
 | **AUTO_UPGRADE_HOLY**   |                    Auto upgrade holy (by default - True)                    |
 | **AUTO_TASK**           |                       Auto tasks (default - True)                           |
 | **AUTO_START_HUNT**     |                    Auto start hunt (default - True)                         |
-| **AUTO_SELL_WORMS**     |    Auto sell worms (default - True)           |
-| **WORM_LVL_TO_SELL**     |    Auto sell worms by rarity (1 is common - 2 is uncommon - 3 is rare - 4 is epic) (default - 2)           |
-| **PRICE_TO_SELL**       |                   Price to sell worms (0 is auto) (default - 0)             |
-| **QUANTITY_FOR_SALE**   |                  Max worms to put on sale (default - 3)                     |
+| **AUTO_SELL_WORMS**     |           Auto sell worms (default - True)                                  |
+| **QUANTITY_TO_KEEP**     |    Quantity to keep worms check instruction [here](https://github.com/vanhbakaa/Seed-App-Mine-Seed-BOT-Telegram/blob/main/setting.md)                       |
 | **USE_PROXY_FROM_FILE** | Whether to use a proxy from the bot/config/proxies.txt file (True / False)  |
 
 ## Quick Start 📚
