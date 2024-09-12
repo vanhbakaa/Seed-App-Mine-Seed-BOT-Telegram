@@ -59,6 +59,8 @@ class Tapper:
                          "legendary": 5}
         self.total_earned_from_sale = 0
         self.total_on_sale = 0
+        self.worm_in_inv = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
+        self.worm_in_inv_copy = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
 
     async def get_tg_web_data(self, proxy: str | None) -> str:
         logger.info(f"Getting data for {self.session_name}")
@@ -308,8 +310,11 @@ class Tapper:
         worms = []
         first_page = requests.get(api_inv+"?page=1", headers=headers)
         json_page = first_page.json()
+
         for worm in json_page['data']['items']:
             worms.append(worm)
+            if worm['on_market'] is False:
+                self.worm_in_inv[worm['type']] += 1
         count = 0
         if json_page['data']['total'] % json_page['data']['page_size'] != 0:
             count = 1
@@ -320,10 +325,12 @@ class Tapper:
             json_page = page_data.json()
             for worm in json_page['data']['items']:
                 worms.append(worm)
+                if worm['on_market'] is False:
+                    self.worm_in_inv[worm['type']] += 1
             time.sleep(uniform(1,2))
         return worms
 
-    def sell_worm(self, worm_id, price):
+    def sell_worm(self, worm_id, price, worm_type):
         payload = {
             "price": price,
             "worm_id": worm_id
@@ -331,11 +338,11 @@ class Tapper:
         response = requests.post(api_sell, json=payload, headers=headers)
         if response.status_code == 200:
             self.total_on_sale += 1
-            logger.success(f"{self.session_name} | <green>Sell worm successfully, price: {price/1000000000}</green>")
+            logger.success(f"{self.session_name} | <green>Sell {worm_type} worm successfully, price: {price/1000000000}</green>")
         else:
             response_data = response.json()
             print(response_data)
-            logger.info(f"{self.session_name} | Failed to sell worm, response code:{response.status_code}")
+            logger.info(f"{self.session_name} | Failed to sell {worm_type} worm, response code:{response.status_code}")
             return None
 
     def get_price(self, worm_type):
@@ -347,14 +354,14 @@ class Tapper:
         else:
             return 0
 
-    def get_list_data(self, worm_type):
+    def get_sale_data(self):
         api = "https://elb.seeddao.org/api/v1/history-log-market/me?market_type=worm&page=1&history_type=sell"
         response = requests.get(api, headers=headers)
         json_data = response.json()
-        worm_on_sale = []
+        worm_on_sale = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
         for worm in json_data['data']['items']:
-            if worm['worm_type'] == worm_type and worm['status'] == "on-sale":
-                worm_on_sale.append(worm)
+            if worm['status'] == "on-sale":
+                worm_on_sale[worm['worm_type']] += 1
             elif worm['status'] == "bought":
                 self.total_earned_from_sale += worm['price_net']/1000000000
         count = 0
@@ -365,12 +372,16 @@ class Tapper:
             response = requests.get(f"https://elb.seeddao.org/api/v1/history-log-market/me?market_type=worm&page={page}&history_type=sell", headers=headers)
             json_data = response.json()
             for worm in json_data['data']['items']:
-                if worm['worm_type'] == worm_type and worm['status'] == "on-sale":
-                    worm_on_sale.append(worm)
+                if worm['status'] == "on-sale":
+                    worm_on_sale[worm['worm_type']] += 1
                 elif worm['status'] == "bought":
                     self.total_earned_from_sale += worm['price_net'] / 1000000000
 
         return worm_on_sale
+
+    def refresh_data(self):
+        self.total_earned_from_sale = 0
+        self.worm_in_inv = self.worm_in_inv_copy
 
     async def run(self, proxy: str | None) -> None:
         access_token_created_time = 0
@@ -483,36 +494,28 @@ class Tapper:
                 if settings.AUTO_SELL_WORMS:
                     logger.info(f"{self.session_name} | Fetching worms data to put it on sale...")
                     worms = self.get_worms()
-                    worm_lvl_min = settings.WORM_LVL_TO_SELL
-                    if worm_lvl_min == 1:
-                        worm_type = "common"
-                    elif worm_lvl_min == 2:
-                        worm_type = "uncommon"
-                    elif worm_lvl_min == 3:
-                        worm_type = "rare"
-                    elif worm_lvl_min == 4:
-                        worm_type = "epic"
-                    else:
-                        worm_type = "legendary"
-                    worm_on_sale = self.get_list_data(worm_type)
-                    self.total_on_sale = len(worm_on_sale)
-                    logger.info(f"{self.session_name} | Total {worm_type} on sale: <green>{len(worm_on_sale)}</green> | Total seed earned from selling: <green>{self.total_earned_from_sale} seed</green>")
-                    price_to_sell = settings.PRICE_TO_SELL*1000000000
+                    # print(self.worm_in_inv)
+                    worms_on_sell = self.get_sale_data()
+                    logger.info(f"{self.session_name} | Worms on sale now: ")
+                    for worm in worms_on_sell:
+                        logger.info(f"{self.session_name} | Total <cyan>{worm}</cyan> on sale: <yellow>{worms_on_sell[worm]}</yellow>")
+                    logger.info(f"{self.session_name} | Total earned from sale: <yellow>{self.total_earned_from_sale}</yellow>")
                     for worm in worms:
-                        if self.worm_lvl[worm['type']] != worm_lvl_min:
+                        if worm['on_market']:
                             continue
-                        elif worm['on_market']:
+                        elif settings.QUANTITY_TO_KEEP[worm['type']]['quantity_to_keep'] == -1:
                             continue
-                        else:
-                            if self.total_on_sale < settings.QUANTITY_FOR_SALE:
-                                if price_to_sell == 0:
-                                    price_to_sell = self.get_price(worm['type'])
-                                    if price_to_sell == 0:
-                                        continue
-                                self.sell_worm(worm['id'], price_to_sell)
+                        elif settings.QUANTITY_TO_KEEP[worm['type']]['quantity_to_keep'] < self.worm_in_inv[worm['type']]:
+                            if settings.QUANTITY_TO_KEEP[worm['type']]['sale_price'] == 0:
+                                price_to_sell = self.get_price(worm['type'])
+
                             else:
-                                logger.info(f"{self.session_name} | <yellow>Max quantity for sale reached skipping...</yellow>")
-                                break
+                                price_to_sell = settings.QUANTITY_TO_KEEP[worm['type']]['sale_price']*(10**9)
+                            # print(f"Sell {worm['type']} , price: {price_to_sell/1000000000}")
+                            self.sell_worm(worm['id'], price_to_sell, worm['type'])
+                            self.worm_in_inv[worm['type']] -= 1
+
+                    self.refresh_data()
                 if settings.AUTO_CLEAR_TASKS:
                     await self.fetch_tasks(http_client)
 
