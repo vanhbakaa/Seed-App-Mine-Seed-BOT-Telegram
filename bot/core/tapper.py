@@ -40,6 +40,7 @@ api_feed = "https://elb.seeddao.org/api/v1/bird-feed"
 api_start_hunt = "https://elb.seeddao.org/api/v1/bird-hunt/start"
 api_inv = "https://elb.seeddao.org/api/v1/worms/me"
 api_sell = "https://elb.seeddao.org/api/v1/market-item/add"
+new_user_api = 'https://elb.seeddao.org/api/v1/profile2'
 
 
 
@@ -63,7 +64,12 @@ class Tapper:
         self.worm_in_inv_copy = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
 
     async def get_tg_web_data(self, proxy: str | None) -> str:
-        logger.info(f"Getting data for {self.session_name}")
+        # logger.info(f"Getting data for {self.session_name}")
+        if settings.REF_LINK == '':
+            ref_ = "t.me/seed_coin_bot/app?startapp=6493211155"
+        else:
+            ref_ = settings.REF_LINK
+        ref__ = ref_.split('=')[1]
         if proxy:
             proxy = Proxy.from_str(proxy)
             proxy_dict = dict(
@@ -103,6 +109,7 @@ class Tapper:
                 app=InputBotAppShortName(bot_id=peer, short_name="app"),
                 platform='android',
                 write_allowed=True,
+                start_param=ref__
             ))
 
             auth_url = web_view.url
@@ -129,11 +136,40 @@ class Tapper:
         except Exception as error:
             logger.error(f"{self.session_name} | Proxy: {proxy} | Error: {error}")
 
+
+    async def setup_profile(self, http_client: aiohttp.ClientSession) -> None:
+        response = await http_client.post(url=api_profile)
+        if response.status == 200:
+            logger.info(f"{self.session_name} | <green>Set up account successfully!</green>")
+
+
+        else:
+            logger.warning(f"Can't get account data for session: {self.session_name}. <red>response status: {response.status}</red>")
+
+    async def hatch_egg(self, http_client: aiohttp.ClientSession, egg_id):
+        payload = {
+            "egg_id": egg_id
+        }
+        res = await http_client.post('https://elb.seeddao.org/api/v1/egg-hatch/complete', json=payload)
+        if res.status == 200:
+            json_data = await res.json()
+            logger.success(f"{self.session_name} | <cyan>Sucessfully hatched {json_data['data']['type']}!</cyan>")
+
+    async def get_first_egg_and_hatch(self, http_client: aiohttp.ClientSession):
+        res = await http_client.post('https://elb.seeddao.org/api/v1/give-first-egg')
+        if res.status == 200:
+            logger.success(f"{self.session_name} <green>Successfully get first egg!</green>")
+            json_egg = await res.json()
+            egg_id = str(json_egg['data']['id'])
+            await self.hatch_egg(http_client, egg_id)
+
     async def fetch_profile(self, http_client: aiohttp.ClientSession) -> None:
         response = await http_client.get(url=api_profile)
         if response.status == 200:
             response_json = await response.json()
             logger.info(f"{self.session_name} | <green>Got into seed app - Username: {response_json['data']['name']}</green>")
+            if response_json['data']['give_first_egg'] is False:
+                await self.get_first_egg_and_hatch(http_client)
             upgrade_levels = {}
             for upgrade in response_json['data']['upgrades']:
                 upgrade_type = upgrade['upgrade_type']
@@ -225,7 +261,7 @@ class Tapper:
         response = await http_client.get('https://elb.seeddao.org/api/v1/tasks/progresses')
         tasks = await response.json()
         for task in tasks['data']:
-            if task['task_user'] is None or not task['task_user']['completed']:
+            if task['task_user'] is None:
                 await self.mark_task_complete(task['id'], task['name'], http_client)
 
     async def mark_task_complete(self, task_id, task_name, http_client: aiohttp.ClientSession):
@@ -280,14 +316,10 @@ class Tapper:
             "bird_id": bird_id,
             "worm_ids": worm_id
         }
-        response = requests.post(api_feed, json = payload, headers=headers)
+        response = requests.post(api_feed, json=payload, headers=headers)
         if response.status_code == 200:
             response_data = response.json()
             logger.success(f"{self.session_name} | <green>Feed bird successfully</green>")
-            try:
-                return response_data['energy_max'] - response_data['energy_level']
-            except:
-                return response_data['energy_level']
         else:
             response_data = response.json()
             print(response_data)
@@ -379,6 +411,12 @@ class Tapper:
 
         return worm_on_sale
 
+    async def check_new_user(self, http_client: aiohttp.ClientSession):
+        response = await http_client.get(new_user_api)
+        if response.status == 200:
+            data_ = await response.json()
+            # print(data_)
+            return data_['data']['bonus_claimed']
     def refresh_data(self):
         self.total_earned_from_sale = 0
         self.worm_in_inv = self.worm_in_inv_copy
@@ -405,6 +443,12 @@ class Tapper:
                     access_token_created_time = time.time()
                     token_live_time = randint(3500, 3600)
                     await asyncio.sleep(delay=randint(10, 15))
+
+                not_new_user = await self.check_new_user(http_client)
+
+                if not_new_user is False:
+                    logger.info(f"{self.session_name} | Setting up new account...")
+                    await self.setup_profile(http_client)
 
                 await self.fetch_profile(http_client)
 
@@ -449,20 +493,22 @@ class Tapper:
                                 try:
                                     energy = bird_data['energy_max']
                                 except:
-                                    energy = 1000000000
+                                    energy = 2000000000
+                                wormss = []
                                 for worm in worms:
-                                    if worm['type'] == "common":
-                                        wormss = [worm['id']]
-                                        energy -= self.feed_bird(bird_data['id'], wormss)
+                                    if worm['type'] == "common" and worm['on_market'] is False:
+                                        wormss.append(worm['id'])
+                                        energy -= worm['reward']
                                         if energy <= 1000000000:
                                             break
                                 if energy > 1000000000:
                                     for worm in worms:
-                                        if worm['type'] == "uncommon":
-                                            wormss = [worm['id']]
-                                            energy -= self.feed_bird(bird_data['id'], wormss)
+                                        if worm['type'] == "uncommon" and worm['on_market'] is False:
+                                            wormss.append(worm['id'])
+                                            energy -= worm['reward']
                                             if energy <= 1000000000:
                                                 break
+                                self.feed_bird(bird_data['id'], wormss)
                                 if energy > 1000000000:
                                     condition = False
 
