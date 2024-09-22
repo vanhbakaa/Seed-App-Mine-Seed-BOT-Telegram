@@ -7,13 +7,15 @@ class Settings(BaseSettings):
     API_ID: int
     API_HASH: str
 
-    AUTO_UPGRADE_STORAGE: bool = False
-    AUTO_UPGRADE_MINING: bool = False
-    AUTO_UPGRADE_HOLY: bool = False
-    AUTO_CLEAR_TASKS: bool = False
-    AUTO_START_HUNT: bool = False
+    REF_LINK: str = "t.me/seed_coin_bot/app?startapp=6493211155"
 
-    AUTO_SELL_WORMS: bool = True
+    AUTO_UPGRADE_STORAGE: bool = True
+    AUTO_UPGRADE_MINING: bool = True
+    AUTO_UPGRADE_HOLY: bool = True
+    AUTO_CLEAR_TASKS: bool = True
+    AUTO_START_HUNT: bool = True
+
+    AUTO_SELL_WORMS: bool = False
     QUANTITY_TO_KEEP: dict = {
         "common": {
             "quantity_to_keep": 2,
