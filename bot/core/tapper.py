@@ -491,25 +491,25 @@ class Tapper:
                                 condition = False
                             else:
                                 try:
-                                    energy = bird_data['energy_max']
+                                    energy = (bird_data['energy_max'] - bird_data['energy_level'])/1000000000
                                 except:
-                                    energy = 2000000000
+                                    energy = 2
                                 wormss = []
                                 for worm in worms:
                                     if worm['type'] == "common" and worm['on_market'] is False:
                                         wormss.append(worm['id'])
-                                        energy -= worm['reward']
-                                        if energy <= 1000000000:
+                                        energy -= 2
+                                        if energy <= 1:
                                             break
-                                if energy > 1000000000:
+                                if energy > 1:
                                     for worm in worms:
                                         if worm['type'] == "uncommon" and worm['on_market'] is False:
                                             wormss.append(worm['id'])
-                                            energy -= worm['reward']
-                                            if energy <= 1000000000:
+                                            energy -= 4
+                                            if energy <= 1:
                                                 break
                                 self.feed_bird(bird_data['id'], wormss)
-                                if energy > 1000000000:
+                                if energy > 1:
                                     condition = False
 
                         if condition:
