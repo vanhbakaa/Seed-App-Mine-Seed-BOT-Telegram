@@ -23,7 +23,6 @@ Pyrogram==2.0.106
 PySocks==1.7.1
 python-dotenv==1.0.1
 pytz==2024.1
-requests==2.32.3
 six==1.16.0
 soupsieve==2.5
 TgCrypto==1.2.5
@@ -34,3 +33,5 @@ websockets==12.0
 win32-setctime==1.1.0
 yarl==1.9.4
 zope.interface==6.4.post2
+requests==2.32.3
+python-dateutil==2.9.0
