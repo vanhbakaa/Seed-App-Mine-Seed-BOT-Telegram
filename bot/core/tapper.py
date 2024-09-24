@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import unquote, quote
 
 import aiohttp
@@ -113,6 +113,7 @@ class Tapper:
             ))
 
             auth_url = web_view.url
+            # print(auth_url)
             tg_web_data = unquote(string=auth_url.split('tgWebAppData=')[1].split('&tgWebAppVersion')[0])
 
             if self.tg_client.is_connected:
@@ -307,6 +308,7 @@ class Tapper:
         response = requests.get(api_get_worm_data, headers=headers)
         if response.status_code == 200:
             response_data = response.json()
+            # print(response_data)
             return response_data['data']
         else:
             return None
@@ -464,7 +466,12 @@ class Tapper:
                         except:
                             import dateutil.parser
                             timestamp_naive = dateutil.parser.isoparse(bird_data['hunt_end_at'])
-                        now = datetime.utcnow()
+                        now = datetime.now(timezone.utc)
+
+                        # If the parsed timestamp is naive, make it aware in UTC
+                        if timestamp_naive.tzinfo is None:
+                            timestamp_naive = timestamp_naive.replace(tzinfo=timezone.utc)
+
                         if now < timestamp_naive:
                             logger.info(f"{self.session_name} | Bird currently hunting...")
                         else:
