@@ -292,6 +292,8 @@ class Tapper:
             response_data = await response.json()
             return response_data['data']
         else:
+            response_data = await response.json()
+            logger.info(f"{self.session_name} | Get bird data failed: {response_data}")
             return None
 
     async def make_bird_happy(self, bird_id, http_client: aiohttp.ClientSession):
@@ -461,10 +463,10 @@ class Tapper:
                 if settings.AUTO_START_HUNT:
                     bird_data = await self.get_bird_info(http_client)
                     # print(bird_data)
-                    if bird_data['owner_id'] != self.user_id:
-                        logger.warning(f"{self.session_name} | <yellow>Bird is not your: {bird_data}</yellow>")
-                    elif bird_data is None:
+                    if bird_data is None:
                         logger.info(f"{self.session_name} | Can't get bird data...")
+                    elif bird_data['owner_id'] != self.user_id:
+                        logger.warning(f"{self.session_name} | <yellow>Bird is not your: {bird_data}</yellow>")
                     elif bird_data['status'] == "hunting":
 
                         try:
