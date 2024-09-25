@@ -10,6 +10,7 @@ from better_proxy import Proxy
 from bot.config import settings
 from bot.utils import logger
 from bot.core.tapper import run_tapper
+from bot.core.query import run_tapper_query
 from bot.core.registrator import register_sessions
 
 
@@ -21,13 +22,13 @@ start_text = """
     ░╚═══██╗██╔══╝░░██╔══╝░░██║░░██║  ██║╚██╔╝██║██║██║╚████║██╔══╝░░██╔══██╗
     ██████╔╝███████╗███████╗██████╔╝  ██║░╚═╝░██║██║██║░╚███║███████╗██║░░██║
     ╚═════╝░╚══════╝╚══════╝╚═════╝░  ╚═╝░░░░░╚═╝╚═╝╚═╝░░╚══╝╚══════╝╚═╝░░╚═╝
-                              BY VANHBAKA 
-         Join my telegram channel for more: https://t.me/airdrop_tool_vanh                                                                                                      
+                                    BY VANHBAKA                                                                                                       
                                                                    
 Select an action:
 
-    1. Run clicker
+    1. Run clicker (session)
     2. Create session
+    3. Run clicker (query)
 """
 
 global tg_clients
@@ -92,8 +93,8 @@ async def process() -> None:
 
             if not action.isdigit():
                 logger.warning("Action must be number")
-            elif action not in ["1", "2"]:
-                logger.warning("Action must be 1 or 2")
+            elif action not in ["1", "2", "3"]:
+                logger.warning("Action must be 1, 2 or 3")
             else:
                 action = int(action)
                 break
@@ -104,6 +105,12 @@ async def process() -> None:
         tg_clients = await get_tg_clients()
 
         await run_tasks(tg_clients=tg_clients)
+    elif action == 3:
+        with open("data.txt", "r") as f:
+            query_ids = [line.strip() for line in f.readlines()]
+        proxies = get_proxies()
+        await run_tapper_query(query_ids, proxies)
+
 
 
 async def run_tasks(tg_clients: list[Client]):
