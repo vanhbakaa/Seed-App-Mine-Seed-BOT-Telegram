@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime, timezone
+from itertools import cycle
 from urllib.parse import unquote
 
 import aiohttp
@@ -166,6 +167,7 @@ class Tapper:
         if response.status == 200:
             response_json = await response.json()
             self.user_id = response_json['data']['id']
+            self.session_name = response_json['data']['name']
             logger.info(
                 f"{self.session_name} | <green>Got into seed app - Username: {response_json['data']['name']}</green>")
             if response_json['data']['give_first_egg'] is False:
@@ -443,7 +445,7 @@ class Tapper:
         while True:
             try:
                 if time.time() - access_token_created_time >= token_live_time:
-                    logger.info(f"{self.session_name} | Update auth token...")
+                    # logger.info(f"{self.session_name} | Update auth token...")
                     tg_web_data = await self.get_tg_web_data(proxy=proxy)
                     headers['telegram-data'] = tg_web_data
                     # print(tg_web_data)
@@ -484,13 +486,13 @@ class Tapper:
                         if now < timestamp_naive:
                             logger.info(f"{self.session_name} | Bird currently hunting...")
                         else:
-                            logger.info(f"{self.session_name} | Hunt completed, claiming reward...")
+                            logger.info(f"{self.session_name} | <white>Hunt completed, claiming reward...</white>")
                             await self.claim_hunt_reward(bird_data['id'], http_client)
                     else:
                         condition = True
                         if bird_data['happiness_level'] == 0:
                             logger.info(f"{self.session_name} | Bird is not happy, attemping to make bird happy...")
-                            check = self.make_bird_happy(bird_data['id'], http_client)
+                            check = await self.make_bird_happy(bird_data['id'], http_client)
                             if check:
                                 logger.success(f"{self.session_name} | <green>Successfully make bird happy!</green>")
                             else:
@@ -507,9 +509,9 @@ class Tapper:
                                 condition = False
                             else:
                                 try:
-                                    print(bird_data)
                                     energy = (bird_data['energy_max'] - bird_data['energy_level']) / 1000000000
                                 except:
+                                    print(bird_data)
                                     energy = 2
                                 wormss = []
                                 for worm in worms:
@@ -599,9 +601,11 @@ class Tapper:
 
 
 async def run_tapper(tg_client: Client, proxy: str | None):
+
     try:
         sleep_ = randint(1, 25)
         logger.info(f"Wait {sleep_}s")
+        await asyncio.sleep(sleep_)
         await Tapper(tg_client=tg_client).run(proxy=proxy)
     except InvalidSession:
         logger.error(f"{tg_client.name} | Invalid Session")
