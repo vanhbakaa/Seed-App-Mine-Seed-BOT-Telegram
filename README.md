@@ -37,7 +37,7 @@ To fast install libraries and run bot - open run.bat on Windows or run.sh on Lin
 
 ## Prerequisites
 Before you begin, make sure you have the following installed:
-- [Python](https://www.python.org/downloads/) **version 3.10**
+- [Python](https://www.python.org/downloads/) **version 3.11.5**
 
 ## Obtaining API Keys
 1. Go to my.telegram.org and log in using your phone number.
