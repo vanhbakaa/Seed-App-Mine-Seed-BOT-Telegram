@@ -7,7 +7,7 @@
 |-----------------------------------------------------------|:---------:|
 | Multithreading                                            |     ✅     |
 | Proxy binding to session                                  |     ✅     |
-| Support for tdata / pyrogram .session / telethon .session |     ✅     |
+| Support for tdata / pyrogram .session |     ✅     |
 | Auto-farming                                              |     ✅     |
 | Auto-tasks                                                |     ✅     |
 | Auto-upgrade                                              |     ✅     |
