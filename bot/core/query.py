@@ -574,7 +574,7 @@ class Tapper:
                         elif settings.QUANTITY_TO_KEEP[worm['type']]['quantity_to_keep'] < self.worm_in_inv[
                             worm['type']]:
                             if settings.QUANTITY_TO_KEEP[worm['type']]['sale_price'] == 0:
-                                price_to_sell = self.get_price(worm['type'], http_client)
+                                price_to_sell = await self.get_price(worm['type'], http_client)
 
                             else:
                                 price_to_sell = settings.QUANTITY_TO_KEEP[worm['type']]['sale_price'] * (10 ** 9)
