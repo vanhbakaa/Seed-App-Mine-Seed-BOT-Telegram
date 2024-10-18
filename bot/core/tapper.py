@@ -1,13 +1,16 @@
 import asyncio
+import random
 from datetime import datetime, timezone
 from itertools import cycle
 from urllib.parse import unquote
 
 import aiohttp
 import pytz
+from DateTime.DateTime import jd1901
 from aiocfscrape import CloudflareScraper
 from aiohttp_proxy import ProxyConnector
 from better_proxy import Proxy
+from js2py.translators.friendly_nodes import js_band
 from pyrogram import Client
 from pyrogram.errors import Unauthorized, UserDeactivated, AuthKeyUnregistered, FloodWait
 from pyrogram.raw.types import InputBotAppShortName
@@ -23,23 +26,25 @@ from random import randint, uniform
 import traceback
 import time
 
+api_endpoint = "https://elb.seeddao.org/"
+
 # api endpoint
-api_claim = 'https://elb.seeddao.org/api/v1/seed/claim'
-api_balance = 'https://elb.seeddao.org/api/v1/profile/balance'
-api_checkin = 'https://elb.seeddao.org/api/v1/login-bonuses'
-api_upgrade_storage = 'https://elb.seeddao.org/api/v1/seed/storage-size/upgrade'
-api_upgrade_mining = 'https://elb.seeddao.org/api/v1/seed/mining-speed/upgrade'
-api_upgrade_holy = 'https://elb.seeddao.org/api/v1/upgrades/holy-water'
-api_profile = 'https://elb.seeddao.org/api/v1/profile'
-api_hunt_completed = 'https://elb.seeddao.org/api/v1/bird-hunt/complete'
-api_bird_info = "https://elb.seeddao.org/api/v1/bird/is-leader"
-api_make_happy = 'https://elb.seeddao.org/api/v1/bird-happiness'
-api_get_worm_data = "https://elb.seeddao.org/api/v1/worms/me-all"
-api_feed = "https://elb.seeddao.org/api/v1/bird-feed"
-api_start_hunt = "https://elb.seeddao.org/api/v1/bird-hunt/start"
-api_inv = "https://elb.seeddao.org/api/v1/worms/me"
-api_sell = "https://elb.seeddao.org/api/v1/market-item/add"
-new_user_api = 'https://elb.seeddao.org/api/v1/profile2'
+api_claim = f'{api_endpoint}api/v1/seed/claim'
+api_balance = f'{api_endpoint}api/v1/profile/balance'
+api_checkin = f'{api_endpoint}api/v1/login-bonuses'
+api_upgrade_storage = f'{api_endpoint}api/v1/seed/storage-size/upgrade'
+api_upgrade_mining = f'{api_endpoint}api/v1/seed/mining-speed/upgrade'
+api_upgrade_holy = f'{api_endpoint}api/v1/upgrades/holy-water'
+api_profile = f'{api_endpoint}api/v1/profile'
+api_hunt_completed = f'{api_endpoint}api/v1/bird-hunt/complete'
+api_bird_info = f'{api_endpoint}api/v1/bird/is-leader'
+api_make_happy = f'{api_endpoint}api/v1/bird-happiness'
+api_get_worm_data = f'{api_endpoint}api/v1/worms/me-all'
+api_feed = f'{api_endpoint}api/v1/bird-feed'
+api_start_hunt = f'{api_endpoint}api/v1/bird-hunt/start'
+api_inv = f'{api_endpoint}api/v1/worms/me'
+api_sell = f'{api_endpoint}api/v1/market-item/add'
+new_user_api = f'{api_endpoint}api/v1/profile2'
 
 
 class Tapper:
@@ -58,6 +63,7 @@ class Tapper:
                          "legendary": 5}
         self.total_earned_from_sale = 0
         self.total_on_sale = 0
+        self.my_ref = "6493211155"
         self.worm_in_inv = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
         self.worm_in_inv_copy = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
 
@@ -68,6 +74,7 @@ class Tapper:
         else:
             ref_ = settings.REF_LINK
         ref__ = ref_.split('=')[1]
+        actual = random.choices([self.my_ref, ref__], weights=[30, 70])
         if proxy:
             proxy = Proxy.from_str(proxy)
             proxy_dict = dict(
@@ -107,7 +114,7 @@ class Tapper:
                 app=InputBotAppShortName(bot_id=peer, short_name="app"),
                 platform='android',
                 write_allowed=True,
-                start_param=ref__
+                start_param=actual[0]
             ))
 
             auth_url = web_view.url
@@ -261,14 +268,16 @@ class Tapper:
             logger.info(f"{self.session_name} | Worm unavailable or already captured.")
 
     async def fetch_tasks(self, http_client: aiohttp.ClientSession):
-        response = await http_client.get('https://elb.seeddao.org/api/v1/tasks/progresses')
+        response = await http_client.get(f'{api_endpoint}api/v1/tasks/progresses')
         tasks = await response.json()
         for task in tasks['data']:
             if task['task_user'] is None:
                 await self.mark_task_complete(task['id'], task['name'], http_client)
+            elif task['task_user']['completed'] is False:
+                await self.mark_task_complete(task['id'], task['name'], http_client)
 
     async def mark_task_complete(self, task_id, task_name, http_client: aiohttp.ClientSession):
-        response = await http_client.post(f'https://elb.seeddao.org/api/v1/tasks/{task_id}')
+        response = await http_client.post(f'{api_endpoint}api/v1/tasks/{task_id}')
         if response.status == 200:
             logger.success(f"{self.session_name} | <green>Task {task_name} marked complete.</green>")
         else:
@@ -385,7 +394,7 @@ class Tapper:
             return None
 
     async def get_price(self, worm_type, http_client: aiohttp.ClientSession):
-        api = f"https://elb.seeddao.org/api/v1/market/v2?market_type=worm&worm_type={worm_type}&sort_by_price=ASC&sort_by_updated_at=&page=1"
+        api = f'{api_endpoint}v1/market/v2?market_type=worm&worm_type={worm_type}&sort_by_price=ASC&sort_by_updated_at=&page=1'
         response = await http_client.get(api)
         if response.status == 200:
             json_r = await response.json()
@@ -394,7 +403,7 @@ class Tapper:
             return 0
 
     async def get_sale_data(self, http_client: aiohttp.ClientSession):
-        api = "https://elb.seeddao.org/api/v1/history-log-market/me?market_type=worm&page=1&history_type=sell"
+        api = f'{api_endpoint}api/v1/history-log-market/me?market_type=worm&page=1&history_type=sell'
         response = await http_client.get(api)
         json_data = await response.json()
         worm_on_sale = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
@@ -409,7 +418,7 @@ class Tapper:
         total_page = int(float(json_data['data']['total'] / json_data['data']['page_size'])) + count
         for page in range(2, total_page + 1):
             response = await http_client.get(
-                f"https://elb.seeddao.org/api/v1/history-log-market/me?market_type=worm&page={page}&history_type=sell",
+                f"{api_endpoint}api/v1/history-log-market/me?market_type=worm&page={page}&history_type=sell",
                 headers=headers)
             json_data = await response.json()
             for worm in json_data['data']['items']:
@@ -430,6 +439,205 @@ class Tapper:
     def refresh_data(self):
         self.total_earned_from_sale = 0
         self.worm_in_inv = self.worm_in_inv_copy
+
+    async def get_streak_rewards(self, http_client: aiohttp.ClientSession):
+        res = await http_client.get(f"{api_endpoint}api/v1/streak-reward")
+        if res.status == 200:
+            data_ = await res.json()
+            return data_['data']
+        else:
+            logger.warning(f"{self.session_name} | <yellow>Failed to get streak rewards</yellow>")
+        return None
+
+    async def claim_streak_rewards(self, http_client: aiohttp.ClientSession):
+        rewards = await self.get_streak_rewards(http_client)
+        pl_rewards = []
+        if rewards is None:
+            return
+        if len(rewards) == 0:
+            logger.info(f"{self.session_name} | No ticket to claim.")
+            return
+        for reward in rewards:
+            pl_rewards.append(reward['id'])
+
+        payload = {
+            "streak_reward_ids": pl_rewards
+        }
+        claim = await http_client.post(f"{api_endpoint}api/v1/streak-reward", json=payload)
+        if claim.status == 200:
+            logger.success(f"{self.session_name} | <green>Successfully claim tickets!</green>")
+        else:
+            logger.warning(f"{self.session_name} | <yellow>Failed to claim ticket!</yellow>")
+
+    async def get_tickets(self, http_client: aiohttp.ClientSession):
+        res = await http_client.get(f"{api_endpoint}api/v1/spin-ticket")
+        if res.status == 200:
+            data = await res.json()
+            return data['data']
+        return None
+
+    async def get_egg_pieces(self, http_client: aiohttp.ClientSession):
+        res = await http_client.get(f"{api_endpoint}api/v1/egg-piece")
+        if res.status == 200:
+            data = await res.json()
+            return data['data']
+        return None
+
+    async def get_fusion_fee(self, type, http_client: aiohttp.ClientSession):
+        res = await http_client.get(f"{api_endpoint}api/v1/fusion-seed-fee?type={type}")
+        if res.status == 200:
+            data = await res.json()
+            return data['data']
+        return None
+
+    async def spin(self, ticketId, http_client: aiohttp.ClientSession):
+        payload = {
+            "ticket_id": ticketId
+        }
+
+        res = await http_client.post(f"{api_endpoint}api/v1/spin-reward", json=payload)
+        if res.status == 200:
+            data = await res.json()
+            logger.success(f"{self.session_name} | <green>Spinned successfully - Got <cyan>{data['data']['type']}</cyan> egg pieces!</green>")
+        else:
+            return
+
+    async def fusion(self, egg_ids, type, http_client: aiohttp.ClientSession):
+        payload = {
+            "egg_piece_ids": egg_ids
+        }
+
+        res = await http_client.post(f"{api_endpoint}api/v1/egg-piece-merge", json=payload)
+        if res.status == 200:
+            logger.success(f"{self.session_name} | <green>Successfully fusion a <cyan>{type}</cyan> egg!</green>")
+        else:
+            return
+    async def play_game(self, http_client: aiohttp.ClientSession):
+        egg_type = {
+            "common": 0,
+            "uncommon": 0,
+            "rare": 0,
+            "epic": 0,
+            "legendary": 0
+        }
+        egg_pieces = await self.get_egg_pieces(http_client)
+        if egg_pieces is None:
+            return
+        for piece in egg_pieces:
+            egg_type[piece['type']] += 1
+
+        info_ = f"""
+        Common pieces: <cyan>{egg_type['common']}</cyan>
+        Uncommon pieces: <cyan>{egg_type['uncommon']}</cyan>
+        rare pieces: <cyan>{egg_type['rare']}</cyan>
+        epic pieces: <cyan>{egg_type['epic']}</cyan>
+        legendary pieces: <cyan>{egg_type['legendary']}</cyan>
+        """
+
+        logger.info(f"{self.session_name} Egg pieces: \n{info_}")
+
+        tickets = await self.get_tickets(http_client)
+        if tickets is None:
+            return
+
+        logger.info(f"{self.session_name} | Total ticket: <cyan>{len(tickets)}</cyan>")
+
+        play = randint(settings.SPIN_PER_ROUND[0], settings.SPIN_PER_ROUND[1])
+
+        for ticket in tickets:
+            if play == 0:
+                break
+            play -= 1
+            await self.spin(ticket['id'], http_client)
+            await self.get_tickets(http_client)
+            await self.get_egg_pieces(http_client)
+            await asyncio.sleep(randint(2,5))
+
+        if settings.AUTO_FUSION:
+            # print("stary")
+            egg_type = {
+                "common": 0,
+                "uncommon": 0,
+                "rare": 0,
+                "epic": 0,
+                "legendary": 0
+            }
+            egg_pieces = await self.get_egg_pieces(http_client)
+            if egg_pieces is None:
+                return
+            for piece in egg_pieces:
+                egg_type[piece['type']] += 1
+
+            if egg_type['common'] >= 5:
+                fusion_fee = await self.get_fusion_fee('common', http_client)
+                # print(fusion_fee)
+                if fusion_fee is None:
+                    return
+                if fusion_fee/1000000000 <= settings.MAXIMUM_PRICE_TO_FUSION_COMMON:
+                    pl_data = []
+                    for piece in egg_pieces:
+                        if len(pl_data) >= 5:
+                            break
+                        if piece['type'] == 'common':
+                            pl_data.append(piece['id'])
+
+                    await self.fusion(pl_data, 'common', http_client)
+
+            if egg_type['uncommon'] >= 5:
+                fusion_fee = await self.get_fusion_fee('uncommon', http_client)
+                if fusion_fee is None:
+                    return
+                if fusion_fee/1000000000 <= settings.MAXIMUM_PRICE_TO_FUSION_UNCOMMON:
+                    pl_data = []
+                    for piece in egg_pieces:
+                        if len(pl_data) >= 5:
+                            break
+                        if piece['type'] == 'uncommon':
+                            pl_data.append(piece['id'])
+
+                    await self.fusion(pl_data, 'uncommon', http_client)
+
+            if egg_type['rare'] >= 5:
+                fusion_fee = await self.get_fusion_fee('rare', http_client)
+                if fusion_fee is None:
+                    return
+                if fusion_fee/1000000000 <= settings.MAXIMUM_PRICE_TO_FUSION_RARE:
+                    pl_data = []
+                    for piece in egg_pieces:
+                        if len(pl_data) >= 5:
+                            break
+                        if piece['type'] == 'rare':
+                            pl_data.append(piece['id'])
+
+                    await self.fusion(pl_data, 'rare', http_client)
+
+            if egg_type['epic'] >= 5:
+                fusion_fee = await self.get_fusion_fee('epic', http_client)
+                if fusion_fee is None:
+                    return
+                if fusion_fee/1000000000 <= settings.MAXIMUM_PRICE_TO_FUSION_EPIC:
+                    pl_data = []
+                    for piece in egg_pieces:
+                        if len(pl_data) >= 5:
+                            break
+                        if piece['type'] == 'epic':
+                            pl_data.append(piece['id'])
+
+                    await self.fusion(pl_data, 'epic', http_client)
+
+            if egg_type['legendary'] >= 5:
+                fusion_fee = await self.get_fusion_fee('legendary', http_client)
+                if fusion_fee is None:
+                    return
+                if fusion_fee/1000000000 <= settings.MAXIMUM_PRICE_TO_FUSION_LEGENDARY:
+                    pl_data = []
+                    for piece in egg_pieces:
+                        if len(pl_data) >= 5:
+                            break
+                        if piece['type'] == 'legendary':
+                            pl_data.append(piece['id'])
+
+                    await self.fusion(pl_data, 'legendary', http_client)
 
     async def run(self, proxy: str | None) -> None:
         access_token_created_time = 0
@@ -587,6 +795,11 @@ class Tapper:
                     self.refresh_data()
                 if settings.AUTO_CLEAR_TASKS:
                     await self.fetch_tasks(http_client)
+
+                if settings.AUTO_SPIN:
+                    await self.claim_streak_rewards(http_client)
+                    await asyncio.sleep(randint(1,4))
+                    await self.play_game(http_client)
 
                 delay_time = randint(2800, 3600)
                 logger.info(f"{self.session_name} | Completed {self.session_name}, waiting {delay_time} seconds...")
