@@ -17,6 +17,8 @@
 | Auto-upgrade                                              |     ✅     |
 | Auto-check-in                                             |     ✅     |
 | Auto-hunt                                                 |     ✅     |
+| Auto-spin                                                 |     ✅     |
+| Auto-fusion                                                 |     ✅     |
 | Auto-sell worms                                           |     ✅     |
 
 
@@ -30,6 +32,14 @@
 | **AUTO_UPGRADE_MINING** |                  Auto upgrade mining speed (by default - True)              |
 | **AUTO_UPGRADE_HOLY**   |                    Auto upgrade holy (by default - True)                    |
 | **AUTO_TASK**           |                       Auto tasks (default - True)                           |
+| **AUTO_SPIN**     |                    Auto spin (default - True)                         |
+| **SPIN_PER_ROUND**     |                    Spin count each round (default - [5, 10])                         |
+| **AUTO_FUSION**     |                    Auto fusion eggs if possible (default - True)                         |
+| **MAXIMUM_PRICE_TO_FUSION_COMMON**  |                    Max price to fusion common egg (default - 30)                         |
+| **MAXIMUM_PRICE_TO_FUSION_UNCOMMON**  |                    Max price to fusion uncommon egg (default - 200)                         |
+| **MAXIMUM_PRICE_TO_FUSION_RARE**     |                    Max price to fusion rare egg (default - 800)                         |
+| **MAXIMUM_PRICE_TO_FUSION_EPIC**     |                    Max price to fusion epic egg (default - 3000)                         |
+| **MAXIMUM_PRICE_TO_FUSION_LEGENDARY**     |                    Max price to fusion legendary egg (default - 20000)                         |
 | **AUTO_START_HUNT**     |                    Auto start hunt (default - True)                         |
 | **AUTO_SELL_WORMS**     |           Auto sell worms (default - True)                                  |
 | **QUANTITY_TO_KEEP**     |    Quantity to keep worms check instruction [here](https://github.com/vanhbakaa/Seed-App-Mine-Seed-BOT-Telegram/blob/main/setting.md)                       |
