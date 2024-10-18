@@ -15,6 +15,15 @@ class Settings(BaseSettings):
     AUTO_CLEAR_TASKS: bool = True
     AUTO_START_HUNT: bool = True
 
+    AUTO_SPIN: bool = True
+    SPIN_PER_ROUND: list[int] = [5, 10]
+    AUTO_FUSION: bool = True
+    MAXIMUM_PRICE_TO_FUSION_COMMON: int = 30
+    MAXIMUM_PRICE_TO_FUSION_UNCOMMON: int = 200
+    MAXIMUM_PRICE_TO_FUSION_RARE: int = 800
+    MAXIMUM_PRICE_TO_FUSION_EPIC: int = 3000
+    MAXIMUM_PRICE_TO_FUSION_LEGENDARY: int = 20000
+
     AUTO_SELL_WORMS: bool = False
     QUANTITY_TO_KEEP: dict = {
         "common": {
