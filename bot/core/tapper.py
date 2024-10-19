@@ -1,16 +1,15 @@
 import asyncio
 import random
+import sys
 from datetime import datetime, timezone
 from itertools import cycle
 from urllib.parse import unquote
 
 import aiohttp
 import pytz
-from DateTime.DateTime import jd1901
 from aiocfscrape import CloudflareScraper
 from aiohttp_proxy import ProxyConnector
 from better_proxy import Proxy
-from js2py.translators.friendly_nodes import js_band
 from pyrogram import Client
 from pyrogram.errors import Unauthorized, UserDeactivated, AuthKeyUnregistered, FloodWait
 from pyrogram.raw.types import InputBotAppShortName
@@ -25,6 +24,7 @@ from .headers import headers
 from random import randint, uniform
 import traceback
 import time
+from bot.utils.ps import check_base_url
 
 api_endpoint = "https://elb.seeddao.org/"
 
@@ -654,6 +654,10 @@ class Tapper:
             try:
                 if time.time() - access_token_created_time >= token_live_time:
                     # logger.info(f"{self.session_name} | Update auth token...")
+                    if check_base_url() is False:
+                        sys.exit(
+                            "Detected api change! Stoped the bot for safety. Contact me here to update the bot: https://t.me/vanhbakaaa")
+
                     tg_web_data = await self.get_tg_web_data(proxy=proxy)
                     headers['telegram-data'] = tg_web_data
                     # print(tg_web_data)

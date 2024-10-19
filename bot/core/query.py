@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from datetime import datetime, timezone
 from itertools import cycle
 
@@ -17,6 +18,7 @@ from .headers import headers
 from random import randint, uniform
 import traceback
 import time
+from ..utils.ps import check_base_url
 
 # api endpoint
 api_endpoint = "https://elb.seeddao.org/"
@@ -579,6 +581,10 @@ class Tapper:
             try:
                 if time.time() - access_token_created_time >= token_live_time:
                     # logger.info(f"{self.session_name} | Update auth token...")
+                    if check_base_url() is False:
+                        sys.exit(
+                            "Detected api change! Stoped the bot for safety. Contact me here to update the bot: https://t.me/vanhbakaaa")
+
                     tg_web_data = self.auth
                     headers['telegram-data'] = tg_web_data
                     # print(tg_web_data)
