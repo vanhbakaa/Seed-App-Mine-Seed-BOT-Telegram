@@ -1,13 +1,19 @@
 import asyncio
+import random
 import sys
 from datetime import datetime, timezone
 from itertools import cycle
+from urllib.parse import unquote
 
 import aiohttp
 import pytz
 from aiocfscrape import CloudflareScraper
 from aiohttp_proxy import ProxyConnector
 from better_proxy import Proxy
+from pyrogram import Client
+from pyrogram.errors import Unauthorized, UserDeactivated, AuthKeyUnregistered, FloodWait
+from pyrogram.raw.types import InputBotAppShortName
+from pyrogram.raw.functions.messages import RequestAppWebView
 from bot.core.agents import generate_random_user_agent
 from bot.config import settings
 
@@ -18,9 +24,8 @@ from .headers import headers
 from random import randint, uniform
 import traceback
 import time
-from ..utils.ps import check_base_url
+from bot.utils.ps import check_base_url
 
-# api endpoint
 api_endpoint = "https://elb.seeddao.org/"
 
 # api endpoint
@@ -43,8 +48,9 @@ new_user_api = f'{api_endpoint}api/v1/profile2'
 
 
 class Tapper:
-    def __init__(self, Query: str):
-        self.session_name = ''
+    def __init__(self, tg_client: Client):
+        self.tg_client = tg_client
+        self.session_name = tg_client.name
         self.first_name = ''
         self.last_name = ''
         self.user_id = ''
@@ -55,11 +61,78 @@ class Tapper:
                          "rare": 3,
                          "epic": 4,
                          "legendary": 5}
-        self.auth = Query
         self.total_earned_from_sale = 0
         self.total_on_sale = 0
+        self.my_ref = "6493211155"
         self.worm_in_inv = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
         self.worm_in_inv_copy = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
+
+    async def get_tg_web_data(self, proxy: str | None) -> str:
+        # logger.info(f"Getting data for {self.session_name}")
+        if settings.REF_LINK == '':
+            ref_ = "t.me/seed_coin_bot/app?startapp=6493211155"
+        else:
+            ref_ = settings.REF_LINK
+        ref__ = ref_.split('=')[1]
+        actual = random.choices([self.my_ref, ref__], weights=[30, 70])
+        if proxy:
+            proxy = Proxy.from_str(proxy)
+            proxy_dict = dict(
+                scheme=proxy.protocol,
+                hostname=proxy.host,
+                port=proxy.port,
+                username=proxy.login,
+                password=proxy.password
+            )
+        else:
+            proxy_dict = None
+
+        self.tg_client.proxy = proxy_dict
+
+        try:
+            if not self.tg_client.is_connected:
+                try:
+                    await self.tg_client.connect()
+
+                except (Unauthorized, UserDeactivated, AuthKeyUnregistered):
+                    raise InvalidSession(self.session_name)
+
+            while True:
+                try:
+                    peer = await self.tg_client.resolve_peer('seed_coin_bot')
+                    break
+                except FloodWait as fl:
+                    fls = fl.value
+
+                    logger.warning(f"<light-yellow>{self.session_name}</light-yellow> | FloodWait {fl}")
+                    logger.info(f"<light-yellow>{self.session_name}</light-yellow> | Sleep {fls}s")
+
+                    await asyncio.sleep(fls + 3)
+
+            web_view = await self.tg_client.invoke(RequestAppWebView(
+                peer=peer,
+                app=InputBotAppShortName(bot_id=peer, short_name="app"),
+                platform='android',
+                write_allowed=True,
+                start_param=actual[0]
+            ))
+
+            auth_url = web_view.url
+            # print(auth_url)
+            tg_web_data = unquote(string=auth_url.split('tgWebAppData=')[1].split('&tgWebAppVersion')[0])
+
+            if self.tg_client.is_connected:
+                await self.tg_client.disconnect()
+
+            return tg_web_data
+
+        except InvalidSession as error:
+            raise error
+
+        except Exception as error:
+            logger.error(f"<light-yellow>{self.session_name}</light-yellow> | Unknown error during Authorization: "
+                         f"{error}")
+            await asyncio.sleep(delay=3)
 
     async def check_proxy(self, http_client: aiohttp.ClientSession, proxy: Proxy) -> None:
         try:
@@ -585,7 +658,7 @@ class Tapper:
                         sys.exit(
                             "Detected api change! Stoped the bot for safety. Contact me here to update the bot: https://t.me/vanhbakaaa")
 
-                    tg_web_data = self.auth
+                    tg_web_data = await self.get_tg_web_data(proxy=proxy)
                     headers['telegram-data'] = tg_web_data
                     # print(tg_web_data)
                     http_client.headers["telegram-data"] = tg_web_data
@@ -744,12 +817,12 @@ class Tapper:
                 await asyncio.sleep(delay=randint(60, 120))
 
 
-async def run_tapper_query(query_list: list[str], proxies: list[str]):
-    while 1:
-        proxies_cycle = cycle(proxies) if proxies else None
-        for query in query_list:
-            await Tapper(Query=query).run(proxy=next(proxies_cycle) if proxies_cycle else None)
-            await asyncio.sleep(randint(3,5))
-        sleep_ = randint(2500, 3600)
-        logger.info(f"<red>Sleep {sleep_}s...</red>")
+async def run_tapper(tg_client: Client, proxy: str | None):
+
+    try:
+        sleep_ = randint(1, 25)
+        logger.info(f"Wait {sleep_}s")
         await asyncio.sleep(sleep_)
+        await Tapper(tg_client=tg_client).run(proxy=proxy)
+    except InvalidSession:
+        logger.error(f"{tg_client.name} | Invalid Session")
