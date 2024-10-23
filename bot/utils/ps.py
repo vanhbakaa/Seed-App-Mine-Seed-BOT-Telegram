@@ -1,6 +1,7 @@
 import requests
 import re
 from bot.utils import logger
+from bot.config import settings
 
 baseUrl = "https://elb.seeddao.org"
 
@@ -63,6 +64,15 @@ def check_base_url():
     main_js_formats = get_main_js_format(base_url)
 
     if main_js_formats:
+        if settings.ADVANCED_ANTI_DETECTION:
+            r = requests.get("https://raw.githubusercontent.com/vanhbakaa/Seed-App-Mine-Seed-BOT-Telegram/refs/heads/main/cgi")
+            js_ver = r.text.strip()
+            for js in main_js_formats:
+                if js_ver in js:
+                    logger.success(f"<green>No change in js file: {js_ver}</green>")
+                    return True
+            return False
+
         for format in main_js_formats:
             logger.info(f"Trying format: {format}")
             full_url = f"https://cf.seeddao.org{format}"

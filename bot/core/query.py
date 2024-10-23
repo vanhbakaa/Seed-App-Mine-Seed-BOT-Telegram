@@ -579,12 +579,16 @@ class Tapper:
         token_live_time = randint(3500, 3600)
         while True:
             try:
+                if check_base_url() is False:
+                    if settings.ADVANCED_ANTI_DETECTION:
+                        sys.exit(
+                            "Detected index js file change. Contact me to check if it's safe to continue: https://t.me/vanhbakaaa")
+                    else:
+                        sys.exit(
+                            "Detected api change! Stopped the bot for safety. Contact me here to update the bot: https://t.me/vanhbakaaa")
+
                 if time.time() - access_token_created_time >= token_live_time:
                     # logger.info(f"{self.session_name} | Update auth token...")
-                    if check_base_url() is False:
-                        sys.exit(
-                            "Detected api change! Stoped the bot for safety. Contact me here to update the bot: https://t.me/vanhbakaaa")
-
                     tg_web_data = self.auth
                     headers['telegram-data'] = tg_web_data
                     # print(tg_web_data)
@@ -747,9 +751,10 @@ class Tapper:
 async def run_tapper_query(query_list: list[str], proxies: list[str]):
     while 1:
         proxies_cycle = cycle(proxies) if proxies else None
+        # await asyncio.sleep(500)
         for query in query_list:
             await Tapper(Query=query).run(proxy=next(proxies_cycle) if proxies_cycle else None)
-            await asyncio.sleep(randint(3,5))
+            await asyncio.sleep(randint(5,15))
         sleep_ = randint(2500, 3600)
         logger.info(f"<red>Sleep {sleep_}s...</red>")
         await asyncio.sleep(sleep_)
