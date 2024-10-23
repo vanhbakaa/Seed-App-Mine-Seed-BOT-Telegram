@@ -48,6 +48,8 @@ class Settings(BaseSettings):
         }
     }
 
+    ADVANCED_ANTI_DETECTION: bool = True
+
     USE_PROXY_FROM_FILE: bool = False
 
 settings = Settings()
