@@ -379,7 +379,7 @@ class Tapper:
 
     async def sell_worm(self, worm_id, price, worm_type, http_client: aiohttp.ClientSession):
         payload = {
-            "price": price,
+            "price": int(price),
             "worm_id": worm_id
         }
         response = await http_client.post(api_sell, json=payload)
