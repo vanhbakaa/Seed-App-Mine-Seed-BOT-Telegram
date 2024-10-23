@@ -43,6 +43,7 @@
 | **AUTO_START_HUNT**     |                    Auto start hunt (default - True)                         |
 | **AUTO_SELL_WORMS**     |           Auto sell worms (default - True)                                  |
 | **QUANTITY_TO_KEEP**     |    Quantity to keep worms check instruction [here](https://github.com/vanhbakaa/Seed-App-Mine-Seed-BOT-Telegram/blob/main/setting.md)                       |
+| **ADVANCED_ANTI_DETECTION**     |   Add more proctection for your account (default: True) |
 | **USE_PROXY_FROM_FILE** | Whether to use a proxy from the bot/config/proxies.txt file (True / False)  |
 
 ## Quick Start 📚
