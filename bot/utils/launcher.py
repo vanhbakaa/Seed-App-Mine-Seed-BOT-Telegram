@@ -2,7 +2,6 @@ import os
 import glob
 import asyncio
 import argparse
-import sys
 from itertools import cycle
 
 from pyrogram import Client
@@ -13,7 +12,6 @@ from bot.utils import logger
 from bot.core.tapper import run_tapper
 from bot.core.query import run_tapper_query
 from bot.core.registrator import register_sessions
-from .ps import check_base_url
 
 
 start_text = """
@@ -84,13 +82,6 @@ async def process() -> None:
     parser.add_argument("-a", "--action", type=int, help="Action to perform")
 
     logger.info(f"Detected {len(get_session_names())} sessions | {len(get_proxies())} proxies")
-
-    if check_base_url() is False:
-        if settings.ADVANCED_ANTI_DETECTION:
-            sys.exit("Detected index js file change. Contact me to check if it's safe to continue: https://t.me/vanhbakaaa")
-        else:
-            sys.exit(
-                "Detected api change! Stopped the bot for safety. Contact me here to update the bot: https://t.me/vanhbakaaa")
 
     action = parser.parse_args().action
 
