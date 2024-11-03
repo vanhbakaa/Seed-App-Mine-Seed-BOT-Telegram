@@ -65,6 +65,15 @@ class Tapper:
         self.worm_in_inv = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
         self.worm_in_inv_copy = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
         self.can_run = True
+        self.academy_ans = {
+            "What is TON?": "Ton",
+            "Coin vs Token": "Tokens",
+            "What is Airdrop?": "Airdrop",
+            "Hot vs Cold Wallet": "Wallet",
+            "Crypto vs Blockchain": "Cryptocurrency",
+            "Learn Blockchain in 3 mins": "Blockchain"
+        }
+
 
     async def get_tg_web_data(self, proxy: str | None) -> str:
         # logger.info(f"Getting data for {self.session_name}")
@@ -271,16 +280,27 @@ class Tapper:
         tasks = await response.json()
         for task in tasks['data']:
             if task['task_user'] is None:
-                await self.mark_task_complete(task['id'], task['name'], http_client)
+                await self.mark_task_complete(task['id'], task['name'], task['type'], http_client)
             elif task['task_user']['completed'] is False:
-                await self.mark_task_complete(task['id'], task['name'], http_client)
+                await self.mark_task_complete(task['id'], task['name'], task['type'], http_client)
 
-    async def mark_task_complete(self, task_id, task_name, http_client: aiohttp.ClientSession):
-        response = await http_client.post(f'{api_endpoint}api/v1/tasks/{task_id}')
-        if response.status == 200:
-            logger.success(f"{self.session_name} | <green>Task {task_name} marked complete.</green>")
+    async def mark_task_complete(self, task_id, task_name, type, http_client: aiohttp.ClientSession):
+        if type == "academy":
+            payload = {
+                "answer": self.academy_ans[task_name]
+            }
+            response = await http_client.post(f'{api_endpoint}api/v1/tasks/{task_id}', json=payload)
+            if response.status == 200:
+                logger.success(f"{self.session_name} | <green>Task {task_name} marked complete.</green>")
+            else:
+                logger.error(
+                    f"{self.session_name} | Failed to complete task {task_name}, status code: {response.status}")
         else:
-            logger.error(f"{self.session_name} | Failed to complete task {task_name}, status code: {response.status}")
+            response = await http_client.post(f'{api_endpoint}api/v1/tasks/{task_id}')
+            if response.status == 200:
+                logger.success(f"{self.session_name} | <green>Task {task_name} marked complete.</green>")
+            else:
+                logger.error(f"{self.session_name} | Failed to complete task {task_name}, status code: {response.status}")
 
     async def claim_hunt_reward(self, bird_id, http_client: aiohttp.ClientSession):
         payload = {
