@@ -66,7 +66,8 @@ class Tapper:
             "What is Airdrop?": "Airdrop",
             "Hot vs Cold Wallet": "Wallet",
             "Crypto vs Blockchain": "Cryptocurrency",
-            "Learn Blockchain in 3 mins": "Blockchain"
+            "Learn Blockchain in 3 mins": "Blockchain",
+            "News affecting the BTC price": "BTCTOTHEMOON"
         }
 
     async def check_proxy(self, http_client: aiohttp.ClientSession, proxy: Proxy) -> None:
@@ -213,6 +214,8 @@ class Tapper:
 
     async def mark_task_complete(self, task_id, task_name, type, http_client: aiohttp.ClientSession):
         if type == "academy":
+            if task_name not in list(self.academy_ans.keys()):
+                return 
             payload = {
                 "answer": self.academy_ans[task_name]
             }
