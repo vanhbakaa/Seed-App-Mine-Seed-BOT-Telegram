@@ -3,7 +3,7 @@ import re
 from bot.utils import logger
 from bot.config import settings
 
-baseUrl = "https://elb.seeddao.org"
+baseUrl = "https://alb.seeddao.org"
 
 headers = {
     'accept': '*/*',
@@ -71,6 +71,8 @@ def check_base_url():
                 if js_ver in js:
                     logger.success(f"<green>No change in js file: {js_ver}</green>")
                     return True
+
+            logger.warning(f"Detected js files: {main_js_formats}")
             return False
 
         for format in main_js_formats:
