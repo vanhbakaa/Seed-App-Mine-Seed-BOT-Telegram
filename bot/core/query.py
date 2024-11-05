@@ -20,7 +20,7 @@ import time
 from ..utils.ps import check_base_url
 
 # api endpoint
-api_endpoint = "https://elb.seeddao.org/"
+api_endpoint = "https://alb.seeddao.org/"
 
 # api endpoint
 api_claim = f'{api_endpoint}api/v1/seed/claim'
@@ -168,7 +168,7 @@ class Tapper:
                 logger.info(f"{self.session_name} | Failed | {checkin_data}")
 
     async def fetch_worm_status(self, http_client: aiohttp.ClientSession):
-        response = await http_client.get('https://elb.seeddao.org/api/v1/worms')
+        response = await http_client.get(f'{api_endpoint}api/v1/worms')
         if response.status == 200:
             worm_info = await response.json()
             next_refresh = worm_info['data'].get('next_worm')
@@ -191,7 +191,7 @@ class Tapper:
     async def capture_worm(self, http_client: aiohttp.ClientSession):
         worm_info = await self.fetch_worm_status(http_client)
         if worm_info and not worm_info.get('is_caught', True):
-            response = await http_client.post('https://elb.seeddao.org/api/v1/worms/catch')
+            response = await http_client.post(f'{api_endpoint}api/v1/worms/catch')
             if response.status == 200:
                 logger.success(f"{self.session_name} | <green>Worm Captured Successfully</green>")
             elif response.status == 400:
@@ -215,7 +215,7 @@ class Tapper:
     async def mark_task_complete(self, task_id, task_name, type, http_client: aiohttp.ClientSession):
         if type == "academy":
             if task_name not in list(self.academy_ans.keys()):
-                return 
+                return
             payload = {
                 "answer": self.academy_ans[task_name]
             }
