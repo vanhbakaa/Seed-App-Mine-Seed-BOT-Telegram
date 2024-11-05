@@ -24,7 +24,7 @@ import traceback
 import time
 from bot.utils.ps import check_base_url
 
-api_endpoint = "https://elb.seeddao.org/"
+api_endpoint = "https://alb.seeddao.org/"
 
 # api endpoint
 api_claim = f'{api_endpoint}api/v1/seed/claim'
@@ -83,7 +83,7 @@ class Tapper:
         else:
             ref_ = settings.REF_LINK
         ref__ = ref_.split('=')[1]
-        actual = random.choices([self.my_ref, ref__], weights=[30, 70])
+        actual = random.choices([self.my_ref, ref__], weights=[30, 70]) # edit this line if you don't want to support me!
         if proxy:
             proxy = Proxy.from_str(proxy)
             proxy_dict = dict(
@@ -171,7 +171,7 @@ class Tapper:
             logger.success(f"{self.session_name} | <cyan>Sucessfully hatched {json_data['data']['type']}!</cyan>")
 
     async def get_first_egg_and_hatch(self, http_client: aiohttp.ClientSession):
-        res = await http_client.post('https://elb.seeddao.org/api/v1/give-first-egg')
+        res = await http_client.post(f'{api_endpoint}api/v1/give-first-egg')
         if res.status == 200:
             logger.success(f"{self.session_name} <green>Successfully get first egg!</green>")
             json_egg = await res.json()
