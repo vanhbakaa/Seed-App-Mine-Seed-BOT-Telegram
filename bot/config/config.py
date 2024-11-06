@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     API_ID: int
     API_HASH: str
 
-    REF_LINK: str = "t.me/seed_coin_bot/app?startapp=6493211155"
+    REF_LINK: str = ""
 
     AUTO_UPGRADE_STORAGE: bool = True
     AUTO_UPGRADE_MINING: bool = True
