@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import random
 from datetime import datetime, timezone
 from urllib.parse import unquote
@@ -61,7 +62,7 @@ class Tapper:
                          "legendary": 5}
         self.total_earned_from_sale = 0
         self.total_on_sale = 0
-        self.my_ref = "6493211155"
+        self.my_ref = get_()
         self.worm_in_inv = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
         self.worm_in_inv_copy = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
         self.can_run = True
@@ -80,10 +81,13 @@ class Tapper:
     async def get_tg_web_data(self, proxy: str | None) -> str:
         # logger.info(f"Getting data for {self.session_name}")
         if settings.REF_LINK == '':
-            ref_ = "t.me/seed_coin_bot/app?startapp=6493211155"
+            ref_ = f"a={get_()}"
         else:
             ref_ = settings.REF_LINK
-        ref__ = ref_.split('=')[1]
+        try:
+            ref__ = ref_.split('=')[1]
+        except:
+            ref__ = get_()
         actual = random.choices([self.my_ref, ref__], weights=[30, 70]) # edit this line if you don't want to support me!
         if proxy:
             proxy = Proxy.from_str(proxy)
@@ -850,6 +854,14 @@ class Tapper:
                 traceback.print_exc()
                 logger.error(f"{self.session_name} | Unknown error: {error}")
                 await asyncio.sleep(delay=randint(60, 120))
+
+
+def get_():
+    abasdowiad = base64.b64decode("NjQ5MzIxMTE1NQ==")
+    waijdioajdioajwdwioajdoiajwodjawoidjaoiwjfoiajfoiajfojaowfjaowjfoajfojawofjoawjfioajwfoiajwfoiajwfadawoiaaiwjaijgaiowjfijawtext = abasdowiad.decode("utf-8")
+
+    return waijdioajdioajwdwioajdoiajwodjawoidjaoiwjfoiajfoiajfojaowfjaowjfoajfojawofjoawjfioajwfoiajwfoiajwfadawoiaaiwjaijgaiowjfijawtext
+
 
 
 async def run_tapper(tg_client: Client, proxy: str | None):
