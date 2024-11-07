@@ -74,7 +74,8 @@ class Tapper:
             "Crypto vs Blockchain": "Cryptocurrency",
             "Learn Blockchain in 3 mins": "Blockchain",
             "News affecting the BTC price": "BTCTOTHEMOON",
-            "On-chain vs Off-chain #8": "TRANSACTION"
+            "On-chain vs Off-chain #8": "TRANSACTION",
+            "#9 CEX vs DEX": "OKXEED"
         }
 
 
