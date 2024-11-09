@@ -1,18 +1,22 @@
+import json
 import os
 import glob
 import asyncio
 import argparse
+import sys
 from itertools import cycle
+from urllib.parse import unquote
 
+from aiofile import AIOFile
 from pyrogram import Client
 from better_proxy import Proxy
 
 from bot.config import settings
+from bot.core.agents import generate_random_user_agent
 from bot.utils import logger
 from bot.core.tapper import run_tapper
 from bot.core.query import run_tapper_query
 from bot.core.registrator import register_sessions
-
 
 start_text = """
 
@@ -33,6 +37,7 @@ Select an action:
 
 global tg_clients
 
+
 def get_session_names() -> list[str]:
     session_names = sorted(glob.glob("sessions/*.session"))
     session_names = [
@@ -50,6 +55,33 @@ def get_proxies() -> list[Proxy]:
         proxies = []
 
     return proxies
+
+
+def fetch_username(query):
+    try:
+        fetch_data = unquote(query).split("&user=")[1].split("&auth_date=")[0]
+        json_data = json.loads(fetch_data)
+        return json_data['username']
+    except:
+        logger.warning(f"Invaild query: {query}")
+        sys.exit()
+
+async def get_user_agent(session_name):
+    async with AIOFile('user_agents.json', 'r') as file:
+        content = await file.read()
+        user_agents = json.loads(content)
+
+    if session_name not in list(user_agents.keys()):
+        logger.info(f"{session_name} | Doesn't have user agent, Creating...")
+        ua = generate_random_user_agent(device_type='android', browser_type='chrome')
+        user_agents.update({session_name: ua})
+        async with AIOFile('user_agents.json', 'w') as file:
+            content = json.dumps(user_agents, indent=4)
+            await file.write(content)
+        return ua
+    else:
+        logger.info(f"{session_name} | Loading user agent from cache...")
+        return user_agents[session_name]
 
 
 async def get_tg_clients() -> list[Client]:
@@ -118,7 +150,6 @@ async def process() -> None:
         await run_tapper_query(query_ids, proxies)
 
 
-
 async def run_tasks(tg_clients: list[Client]):
     proxies = get_proxies()
     proxies_cycle = cycle(proxies) if proxies else None
@@ -127,6 +158,7 @@ async def run_tasks(tg_clients: list[Client]):
             run_tapper(
                 tg_client=tg_client,
                 proxy=next(proxies_cycle) if proxies_cycle else None,
+                ua=await get_user_agent(tg_client.name)
             )
         )
         for tg_client in tg_clients
