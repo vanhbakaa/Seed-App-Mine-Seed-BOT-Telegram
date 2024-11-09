@@ -1,3 +1,6 @@
 .env
 sessions
 data.txt
+__pycache__
+user_agents.json
+bot/config/proxies.txt
