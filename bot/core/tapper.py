@@ -79,23 +79,6 @@ class Tapper:
             "On-chain vs Off-chain #8": "TRANSACTION"
         }
 
-    async def get_user_agent(self):
-        async with AIOFile('user_agents.json', 'r') as file:
-            content = await file.read()
-            user_agents = json.loads(content)
-
-        if self.session_name not in list(user_agents.keys()):
-            logger.info(f"{self.session_name} | Doesn't have user agent, Creating...")
-            ua = generate_random_user_agent(device_type='android', browser_type='chrome')
-            user_agents.update({self.session_name: ua})
-            async with AIOFile('user_agents.json', 'w') as file:
-                content = json.dumps(user_agents, indent=4)
-                await file.write(content)
-            return ua
-        else:
-            logger.info(f"{self.session_name} | Loading user agent from cache...")
-            return user_agents[self.session_name]
-
     async def get_tg_web_data(self, proxy: str | None) -> str:
         # logger.info(f"Getting data for {self.session_name}")
         if settings.REF_LINK == '':
@@ -684,11 +667,11 @@ class Tapper:
 
                     await self.fusion(pl_data, 'legendary', http_client)
 
-    async def run(self, proxy: str | None) -> None:
+    async def run(self, proxy: str | None, ua: str) -> None:
         access_token_created_time = 0
         proxy_conn = ProxyConnector().from_url(proxy) if proxy else None
 
-        headers["user-agent"] = await self.get_user_agent()
+        headers["user-agent"] = ua
         chrome_ver = fetch_version(headers['user-agent'])
         headers['sec-ch-ua'] = f'"Chromium";v="{chrome_ver}", "Android WebView";v="{chrome_ver}", "Not.A/Brand";v="99"'
         http_client = CloudflareScraper(headers=headers, connector=proxy_conn)
@@ -882,12 +865,12 @@ def get_():
 
 
 
-async def run_tapper(tg_client: Client, proxy: str | None):
+async def run_tapper(tg_client: Client, proxy: str | None, ua: str):
 
     try:
         sleep_ = randint(1, 25)
         logger.info(f"Wait {sleep_}s")
         await asyncio.sleep(sleep_)
-        await Tapper(tg_client=tg_client).run(proxy=proxy)
+        await Tapper(tg_client=tg_client).run(proxy=proxy, ua=ua)
     except InvalidSession:
         logger.error(f"{tg_client.name} | Invalid Session")
