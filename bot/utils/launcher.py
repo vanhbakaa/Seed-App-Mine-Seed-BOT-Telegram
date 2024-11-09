@@ -22,8 +22,7 @@ start_text = """
     ░╚═══██╗██╔══╝░░██╔══╝░░██║░░██║  ██║╚██╔╝██║██║██║╚████║██╔══╝░░██╔══██╗
     ██████╔╝███████╗███████╗██████╔╝  ██║░╚═╝░██║██║██║░╚███║███████╗██║░░██║
     ╚═════╝░╚══════╝╚══════╝╚═════╝░  ╚═╝░░░░░╚═╝╚═╝╚═╝░░╚══╝╚══════╝╚═╝░░╚═╝
-                                    BY VANHBAKA V1.5.0
-                                    
+                                    BY VANHBAKA                                                                                                       
                                                                    
 Select an action:
 
@@ -85,6 +84,11 @@ async def process() -> None:
     logger.info(f"Detected {len(get_session_names())} sessions | {len(get_proxies())} proxies")
 
     action = parser.parse_args().action
+
+    if not os.path.exists("user_agents.json"):
+        with open("user_agents.json", 'w') as file:
+            file.write("{}")
+        logger.info("User agents file created successfully")
 
     if not action:
         print(start_text)

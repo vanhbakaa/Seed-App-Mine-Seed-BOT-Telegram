@@ -1,10 +1,13 @@
 import asyncio
+import json
 from datetime import datetime, timezone
 from itertools import cycle
+from urllib.parse import unquote
 
 import aiohttp
 import pytz
 from aiocfscrape import CloudflareScraper
+from aiofile import AIOFile
 from aiohttp_proxy import ProxyConnector
 from better_proxy import Proxy
 from bot.core.agents import generate_random_user_agent, fetch_version
@@ -43,7 +46,9 @@ new_user_api = f'{api_endpoint}api/v1/profile2'
 
 class Tapper:
     def __init__(self, Query: str):
-        self.session_name = ''
+        fetch_data = unquote(Query).split("&user=")[1].split("&auth_date=")[0]
+        json_data = json.loads(fetch_data)
+        self.session_name = json_data['username']
         self.first_name = ''
         self.last_name = ''
         self.user_id = ''
@@ -68,9 +73,25 @@ class Tapper:
             "Crypto vs Blockchain": "Cryptocurrency",
             "Learn Blockchain in 3 mins": "Blockchain",
             "News affecting the BTC price": "BTCTOTHEMOON",
-            "On-chain vs Off-chain #8": "TRANSACTION",
-            "#9 CEX vs DEX": "OKXEED"
+            "On-chain vs Off-chain #8": "TRANSACTION"
         }
+
+    async def get_user_agent(self):
+        async with AIOFile('user_agents.json', 'r') as file:
+            content = await file.read()
+            user_agents = json.loads(content)
+
+        if self.session_name not in list(user_agents.keys()):
+            logger.info(f"{self.session_name} | Doesn't have user agent, Creating...")
+            ua = generate_random_user_agent(device_type='android', browser_type='chrome')
+            user_agents.update({self.session_name: ua})
+            async with AIOFile('user_agents.json', 'w') as file:
+                content = json.dumps(user_agents, indent=4)
+                await file.write(content)
+            return ua
+        else:
+            logger.info(f"{self.session_name} | Loading user agent from cache...")
+            return user_agents[self.session_name]
 
     async def check_proxy(self, http_client: aiohttp.ClientSession, proxy: Proxy) -> None:
         try:
@@ -594,7 +615,7 @@ class Tapper:
         access_token_created_time = 0
         proxy_conn = ProxyConnector().from_url(proxy) if proxy else None
 
-        headers["user-agent"] = generate_random_user_agent(device_type='android', browser_type='chrome')
+        headers["user-agent"] = await self.get_user_agent()
         chrome_ver = fetch_version(headers['user-agent'])
         headers['sec-ch-ua'] = f'"Chromium";v="{chrome_ver}", "Android WebView";v="{chrome_ver}", "Not.A/Brand";v="99"'
         http_client = CloudflareScraper(headers=headers, connector=proxy_conn)
@@ -766,12 +787,9 @@ class Tapper:
                         await asyncio.sleep(randint(1,4))
                         await self.play_game(http_client)
 
-                # delay_time = randint(2800, 3600)
-                logger.info(f"{self.session_name} | Completed {self.session_name}!")
-                await http_client.close()
-                return
-                # await asyncio.sleep(delay=delay_time)
-            
+                delay_time = randint(2800, 3600)
+                logger.info(f"{self.session_name} | Completed {self.session_name}, waiting {delay_time} seconds...")
+                await asyncio.sleep(delay=delay_time)
             except InvalidSession as error:
                 raise error
 
@@ -781,10 +799,11 @@ class Tapper:
                 await asyncio.sleep(delay=randint(60, 120))
 
 
-async def run_tapper_query(query_list: list[str], proxies: list[str]):
+async def run_tapper_query(query_list: list[str], proxies):
     while 1:
         proxies_cycle = cycle(proxies) if proxies else None
         # await asyncio.sleep(500)
+        print(len(query_list))
         for query in query_list:
             await Tapper(Query=query).run(proxy=next(proxies_cycle) if proxies_cycle else None)
             await asyncio.sleep(randint(5,15))

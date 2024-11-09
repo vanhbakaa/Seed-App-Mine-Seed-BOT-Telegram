@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import json
 import random
 from datetime import datetime, timezone
 from urllib.parse import unquote
@@ -7,6 +8,7 @@ from urllib.parse import unquote
 import aiohttp
 import pytz
 from aiocfscrape import CloudflareScraper
+from aiofile import AIOFile
 from aiohttp_proxy import ProxyConnector
 from better_proxy import Proxy
 from pyrogram import Client
@@ -74,10 +76,25 @@ class Tapper:
             "Crypto vs Blockchain": "Cryptocurrency",
             "Learn Blockchain in 3 mins": "Blockchain",
             "News affecting the BTC price": "BTCTOTHEMOON",
-            "On-chain vs Off-chain #8": "TRANSACTION",
-            "#9 CEX vs DEX": "OKXEED"
+            "On-chain vs Off-chain #8": "TRANSACTION"
         }
 
+    async def get_user_agent(self):
+        async with AIOFile('user_agents.json', 'r') as file:
+            content = await file.read()
+            user_agents = json.loads(content)
+
+        if self.session_name not in list(user_agents.keys()):
+            logger.info(f"{self.session_name} | Doesn't have user agent, Creating...")
+            ua = generate_random_user_agent(device_type='android', browser_type='chrome')
+            user_agents.update({self.session_name: ua})
+            async with AIOFile('user_agents.json', 'w') as file:
+                content = json.dumps(user_agents, indent=4)
+                await file.write(content)
+            return ua
+        else:
+            logger.info(f"{self.session_name} | Loading user agent from cache...")
+            return user_agents[self.session_name]
 
     async def get_tg_web_data(self, proxy: str | None) -> str:
         # logger.info(f"Getting data for {self.session_name}")
@@ -671,7 +688,7 @@ class Tapper:
         access_token_created_time = 0
         proxy_conn = ProxyConnector().from_url(proxy) if proxy else None
 
-        headers["user-agent"] = generate_random_user_agent(device_type='android', browser_type='chrome')
+        headers["user-agent"] = await self.get_user_agent()
         chrome_ver = fetch_version(headers['user-agent'])
         headers['sec-ch-ua'] = f'"Chromium";v="{chrome_ver}", "Android WebView";v="{chrome_ver}", "Not.A/Brand";v="99"'
         http_client = CloudflareScraper(headers=headers, connector=proxy_conn)
