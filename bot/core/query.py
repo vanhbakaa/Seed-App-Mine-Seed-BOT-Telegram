@@ -21,6 +21,7 @@ from random import randint, uniform
 import traceback
 import time
 from ..utils.ps import check_base_url
+from bot.utils import launcher as lc
 
 # api endpoint
 api_endpoint = "https://alb.seeddao.org/"
@@ -799,13 +800,12 @@ class Tapper:
                 await asyncio.sleep(delay=randint(60, 120))
 
 
-async def run_tapper_query(query_list: list[str], proxies):
+async def run_tapper_query(query_list: list[str]):
     while 1:
-        proxies_cycle = cycle(proxies) if proxies else None
         # await asyncio.sleep(500)
         print(len(query_list))
         for query in query_list:
-            await Tapper(Query=query).run(proxy=next(proxies_cycle) if proxies_cycle else None)
+            await Tapper(Query=query).run(proxy=await lc.get_proxy(lc.fetch_username(query)))
             await asyncio.sleep(randint(5,15))
         sleep_ = randint(2500, 3600)
         logger.info(f"<red>Sleep {sleep_}s...</red>")
