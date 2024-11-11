@@ -83,6 +83,34 @@ async def get_user_agent(session_name):
         logger.info(f"{session_name} | Loading user agent from cache...")
         return user_agents[session_name]
 
+def get_un_used_proxy(used_proxies: list[Proxy]):
+    proxies = get_proxies()
+    for proxy in proxies:
+        if proxy not in used_proxies:
+            return proxy
+    return None
+
+async def get_proxy(session_name):
+    if settings.USE_PROXY_FROM_FILE:
+        async with AIOFile('proxy.json', 'r') as file:
+            content = await file.read()
+            proxies = json.loads(content)
+
+        if session_name not in list(proxies.keys()):
+            logger.info(f"{session_name} | Doesn't bind with any proxy, binding to a new proxy...")
+            used_proxies = [proxy for proxy in proxies.values()]
+            proxy = get_un_used_proxy(used_proxies)
+            proxies.update({session_name: proxy})
+            async with AIOFile('proxy.json', 'w') as file:
+                content = json.dumps(proxies, indent=4)
+                await file.write(content)
+            return proxy
+        else:
+            logger.info(f"{session_name} | Loading proxy from cache...")
+            return proxies[session_name]
+    else:
+        return None
+
 
 async def get_tg_clients() -> list[Client]:
     global tg_clients
@@ -145,19 +173,16 @@ async def process() -> None:
     elif action == 3:
         with open("data.txt", "r") as f:
             query_ids = [line.strip() for line in f.readlines()]
-        proxies = get_proxies()
         # print(query_ids)
-        await run_tapper_query(query_ids, proxies)
+        await run_tapper_query(query_ids)
 
 
 async def run_tasks(tg_clients: list[Client]):
-    proxies = get_proxies()
-    proxies_cycle = cycle(proxies) if proxies else None
     tasks = [
         asyncio.create_task(
             run_tapper(
                 tg_client=tg_client,
-                proxy=next(proxies_cycle) if proxies_cycle else None,
+                proxy=await get_proxy(tg_client.name),
                 ua=await get_user_agent(tg_client.name)
             )
         )
