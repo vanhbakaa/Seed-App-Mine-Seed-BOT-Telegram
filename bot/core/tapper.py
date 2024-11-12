@@ -76,7 +76,8 @@ class Tapper:
             "Crypto vs Blockchain": "Cryptocurrency",
             "Learn Blockchain in 3 mins": "Blockchain",
             "News affecting the BTC price": "BTCTOTHEMOON",
-            "On-chain vs Off-chain #8": "TRANSACTION"
+            "On-chain vs Off-chain #8": "TRANSACTION",
+            "#10 Bullish and Bearish": "BULLRUN"
         }
 
     async def get_tg_web_data(self, proxy: str | None) -> str:
