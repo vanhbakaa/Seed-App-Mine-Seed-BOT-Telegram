@@ -788,9 +788,8 @@ class Tapper:
                         await asyncio.sleep(randint(1,4))
                         await self.play_game(http_client)
 
-                delay_time = randint(2800, 3600)
-                logger.info(f"{self.session_name} | Completed {self.session_name}, waiting {delay_time} seconds...")
-                await asyncio.sleep(delay=delay_time)
+                await http_client.close()
+                return
             except InvalidSession as error:
                 raise error
 
