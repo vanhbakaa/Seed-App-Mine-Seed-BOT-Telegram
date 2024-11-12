@@ -74,7 +74,8 @@ class Tapper:
             "Crypto vs Blockchain": "Cryptocurrency",
             "Learn Blockchain in 3 mins": "Blockchain",
             "News affecting the BTC price": "BTCTOTHEMOON",
-            "On-chain vs Off-chain #8": "TRANSACTION"
+            "On-chain vs Off-chain #8": "TRANSACTION",
+            "#10 Bullish and Bearish": "BULLRUN"
         }
 
     async def get_user_agent(self):
@@ -789,7 +790,7 @@ class Tapper:
                         await self.play_game(http_client)
 
                 await http_client.close()
-                return
+
             except InvalidSession as error:
                 raise error
 
