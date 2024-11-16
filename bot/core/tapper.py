@@ -7,6 +7,7 @@ from urllib.parse import unquote
 
 import aiohttp
 import pytz
+import requests
 from aiocfscrape import CloudflareScraper
 from aiofile import AIOFile
 from aiohttp_proxy import ProxyConnector
@@ -68,17 +69,6 @@ class Tapper:
         self.worm_in_inv = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
         self.worm_in_inv_copy = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0}
         self.can_run = True
-        self.academy_ans = {
-            "What is TON?": "Ton",
-            "Coin vs Token": "Tokens",
-            "What is Airdrop?": "Airdrop",
-            "Hot vs Cold Wallet": "Wallet",
-            "Crypto vs Blockchain": "Cryptocurrency",
-            "Learn Blockchain in 3 mins": "Blockchain",
-            "News affecting the BTC price": "BTCTOTHEMOON",
-            "On-chain vs Off-chain #8": "TRANSACTION",
-            "#10 Bullish and Bearish": "BULLRUN"
-        }
 
     async def get_tg_web_data(self, proxy: str | None) -> str:
         # logger.info(f"Getting data for {self.session_name}")
@@ -294,10 +284,13 @@ class Tapper:
 
     async def mark_task_complete(self, task_id, task_name, type, http_client: aiohttp.ClientSession):
         if type == "academy":
-            if task_name not in list(self.academy_ans.keys()):
+            ans = requests.get("https://raw.githubusercontent.com/vanhbakaa/nothing/refs/heads/main/seed_ans.json")
+            academy_ans = ans.json()
+            if task_name not in list(academy_ans.keys()):
+                logger.info(f"{self.session_name} | Answer for {task_name} not available yet!")
                 return
             payload = {
-                "answer": self.academy_ans[task_name]
+                "answer": academy_ans[task_name]
             }
             response = await http_client.post(f'{api_endpoint}api/v1/tasks/{task_id}', json=payload)
             if response.status == 200:
