@@ -51,18 +51,20 @@ class Tapper:
         try:
             fetch_data = unquote(Query).split("user=")[1].split("&chat_instance=")[0]
             json_data = json.loads(fetch_data)
+            self.session_name = json_data['username']
         except:
             try:
                 fetch_data = unquote(Query).split("user=")[1].split("&auth_date=")[0]
                 json_data = json.loads(fetch_data)
+                self.session_name = json_data['username']
             except:
                 try:
                     fetch_data = unquote(unquote(Query)).split("user=")[1].split("&auth_date=")[0]
                     json_data = json.loads(fetch_data)
+                    self.session_name = json_data['username']
                 except:
                     logger.warning(f"Invaild query: {Query}")
-                    sys.exit()
-        self.session_name = json_data['username']
+                    self.session_name = ""
         self.first_name = ''
         self.last_name = ''
         self.user_id = ''
