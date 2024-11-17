@@ -49,15 +49,19 @@ new_user_api = f'{api_endpoint}api/v1/profile2'
 class Tapper:
     def __init__(self, Query: str):
         try:
-            fetch_data = unquote(Query).split("user=")[1].split("&auth_date=")[0]
-        except:
             fetch_data = unquote(Query).split("user=")[1].split("&chat_instance=")[0]
-            
-        try:
             json_data = json.loads(fetch_data)
         except:
-            fetch_data = unquote(fetch_data)
-            json_data = json.loads(fetch_data)
+            try:
+                fetch_data = unquote(Query).split("user=")[1].split("&auth_date=")[0]
+                json_data = json.loads(fetch_data)
+            except:
+                try:
+                    fetch_data = unquote(unquote(Query)).split("user=")[1].split("&auth_date=")[0]
+                    json_data = json.loads(fetch_data)
+                except:
+                    logger.warning(f"Invaild query: {Query}")
+                    sys.exit()
         self.session_name = json_data['username']
         self.first_name = ''
         self.last_name = ''
